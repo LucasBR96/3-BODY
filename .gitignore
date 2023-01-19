@@ -1,2 +1,4 @@
 *.swp
 *.planner
+
+*/__pycache__

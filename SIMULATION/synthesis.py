@@ -7,17 +7,18 @@ import time as tm
 # third party modules    ----------------------------------------------
 import numpy as np
 
+# internal modules ----------------------------------------------------
+from body import body
+
 # CONSTANTS ----------------------------------------------------------
-RADIUS = 2
-ITER_STEP = 0.025
-RECORD_STEP = 0.1
+RADIUS = 1
+ITER_STEP = 0.01
+RECORD_STEP = 1
 NUM_ITERS = 2048
 MIN_DISTANCE = 0.1
 HEAD = "bod_id,iter_num,x,y,vx,vy\n"
 
-body = namedtuple(
-        "body", ["x", "y", "vx","vy"]
-    )
+G = 1
 
 current_simu = 0
 simu_times   = {}
@@ -47,31 +48,22 @@ def init_planets( rnd_pos = True , rnd_speed = True ):
 
     bodies = []
     for theta , vel in zip( angles , velocities ):
-        x , y = RADIUS*np.cos( theta ) , RADIUS*np.sin( theta )
-        vx , vy = vel
-        bod = body( x , y , vx , vy )
-        bodies.append( body )
+        pos = np.array([ RADIUS*np.cos( theta ) , RADIUS*np.sin( theta ) ] )
+        speed = np.array( vel )
+        bod = body( pos , speed )
+        bodies.append( bod )
+
     return bodies
 
-def update_position( bod , acc ):
-
-    ax , ay = acc
-    x , y , vx , vy = bod
-
-    bod.vx = vx + ax*ITER_STEP
-    bod.vy = vy + ay*ITER_STEP
-    bod.x  = x + vx*ITER_STEP + 0.5*ax*( ITER_STEP**2 )
-    bod.y  = y + vy*ITER_STEP + 0.5*ay*( ITER_STEP**2 )
-
 def distance_squared( body_1 , body_2 ):
-    return ( body_1.x - body_2.x )**2 + ( body_1.y - body_2.y )**2
+    return sum( ( body_1.pos - body_2.pos )**2 )
 
 def get_acc( body_1 , body_2 ):
     
-    d_sqrd = distance_squered( body_1 , body_2 )
+    d_sqrd = distance_squared( body_1 , body_2 )
     if d_sqrd <= MIN_DISTANCE**2:
         return 0
-    return 1/d_sqrd
+    return G/d_sqrd
 
 def get_acc_vector( body_1 , body_2 ):
 
@@ -80,8 +72,7 @@ def get_acc_vector( body_1 , body_2 ):
         return ( 0 , 0 )
 
     distance = np.sqrt( distance_squared( body_1 , body_2 ) )
-    dx = body_2.x - body_1.x
-    dy = body_2.y - body_1.y
+    dx , dy = body_2.pos - body_1.pos
 
     ax = acc_mod*( dx/distance )
     ay = acc_mod*( dy/distance )
@@ -98,12 +89,12 @@ def iter_step( bodies ):
         acc[ j ] -= acc_vec
     
     for i , bod in enumerate( bodies ):
-        update_position( bod , acc[ i ] )
+        bod.move( acc[ i ] , ITER_STEP )
 
 def record_bod( bod, bod_id, simulation_id, iter_num ):
 
-    fl = open( f"DATA/simu/simulacao_{simulation_id}" , mode = "a" )
-    s = f"{bod_id},{iter_num},{bod.x},{bod.y},{bod.vx},{bod.vy}\n"
+    fl = open( f"DATA/simu/simulacao_{simulation_id}.csv" , mode = "a" )
+    s = f"{bod_id},{iter_num}," + str( bod ) + "\n"
     fl.write( s )
     fl.close()
 
@@ -111,14 +102,16 @@ def record_bod( bod, bod_id, simulation_id, iter_num ):
 
 def simulate( simulation_id ):
     
-    fl = open( f"DATA/simu/simulacao_{simulation_id}" , mode = "a" )
+    fl = open( f"DATA/simu/simulacao_{simulation_id}.csv" , mode = "a" )
     fl.write( HEAD )
     fl.close()
 
-    bods = init_planets( rnd_speed = False )
+    bods = init_planets( rnd_pos = True, rnd_speed = False )
     for m in range( NUM_ITERS ):
-        for z in range( RECORD_STEP//ITER_STEP ):
+        for z in range( int( RECORD_STEP//ITER_STEP ) ):
             iter_step( bods )
 
         for i , bod in enumerate( bods ):
             record_bod( bod , i, simulation_id, m ) 
+
+simulate( 0 )

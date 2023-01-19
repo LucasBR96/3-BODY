@@ -20,16 +20,16 @@
     </calendar>
   </calendars>
   <tasks>
-    <task id="1" name="Dados" note="" work="288000" start="20220929T000000Z" end="20221010T170000Z" work-start="20220929T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
-      <task id="2" name="Sintese" note="" work="115200" start="20220929T000000Z" end="20221004T170000Z" work-start="20220929T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
-      <task id="3" name="Visualiza&#xE7;&#xE3;o" note="" work="86400" start="20221004T170000Z" end="20221007T170000Z" work-start="20221005T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
+    <task id="1" name="Dados" note="" work="432000" start="20220929T000000Z" end="20221017T170000Z" work-start="20220929T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
+      <task id="2" name="Sintese" note="" work="144000" start="20220929T000000Z" end="20221005T170000Z" work-start="20220929T080000Z" percent-complete="84" priority="0" type="normal" scheduling="fixed-work"/>
+      <task id="3" name="Visualiza&#xE7;&#xE3;o" note="" work="86400" start="20221005T170000Z" end="20221010T170000Z" work-start="20221006T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
         <predecessors>
           <predecessor id="1" predecessor-id="2" type="FS"/>
         </predecessors>
       </task>
-      <task id="4" name="Amostragem" note="" work="86400" start="20220929T000000Z" end="20221010T170000Z" work-start="20220929T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
+      <task id="4" name="Amostragem" note="" work="201600" start="20220929T000000Z" end="20221017T170000Z" work-start="20220929T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
         <task id="5" name="Ler documenta&#xE7;&#xE3;o Pytorch.Dataset" note="" work="57600" start="20220929T000000Z" end="20220930T170000Z" work-start="20220929T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
-        <task id="6" name="Programar" note="" work="28800" start="20221007T170000Z" end="20221010T170000Z" work-start="20221010T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
+        <task id="6" name="Programar" note="" work="144000" start="20221010T170000Z" end="20221017T170000Z" work-start="20221011T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
           <predecessors>
             <predecessor id="1" predecessor-id="3" type="FS"/>
             <predecessor id="1" predecessor-id="5" type="FS"/>
@@ -37,22 +37,22 @@
         </task>
       </task>
     </task>
-    <task id="7" name="Modelo" note="" work="115200" start="20221010T170000Z" end="20221013T170000Z" work-start="20221011T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
+    <task id="7" name="Modelo" note="" work="115200" start="20221017T170000Z" end="20221020T170000Z" work-start="20221018T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
       <predecessors>
         <predecessor id="1" predecessor-id="1" type="FS"/>
       </predecessors>
-      <task id="8" name="Arquitetura" note="" work="28800" start="20221010T170000Z" end="20221011T170000Z" work-start="20221011T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
-      <task id="9" name="Treino" note="" work="28800" start="20221011T170000Z" end="20221012T170000Z" work-start="20221012T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
+      <task id="8" name="Arquitetura" note="" work="28800" start="20221017T170000Z" end="20221018T170000Z" work-start="20221018T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+      <task id="9" name="Treino" note="" work="28800" start="20221018T170000Z" end="20221019T170000Z" work-start="20221019T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
         <predecessors>
           <predecessor id="1" predecessor-id="8" type="FS"/>
         </predecessors>
       </task>
-      <task id="10" name="Valida&#xE7;&#xE3;o" note="" work="57600" start="20221012T170000Z" end="20221013T170000Z" work-start="20221013T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
+      <task id="10" name="Valida&#xE7;&#xE3;o" note="" work="57600" start="20221019T170000Z" end="20221020T170000Z" work-start="20221020T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
         <predecessors>
           <predecessor id="1" predecessor-id="9" type="FS"/>
         </predecessors>
-        <task id="11" name="Acur&#xE1;cia" note="" work="28800" start="20221012T170000Z" end="20221013T170000Z" work-start="20221013T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
-        <task id="12" name="Performance" note="" work="28800" start="20221012T170000Z" end="20221013T170000Z" work-start="20221013T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+        <task id="11" name="Acur&#xE1;cia" note="" work="28800" start="20221019T170000Z" end="20221020T170000Z" work-start="20221020T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
+        <task id="12" name="Performance" note="" work="28800" start="20221019T170000Z" end="20221020T170000Z" work-start="20221020T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work"/>
       </task>
     </task>
     <task id="13" name="Documenta&#xE7;&#xE3;o" note="" work="28800" start="20220929T000000Z" end="20220929T170000Z" work-start="20220929T080000Z" percent-complete="0" priority="0" type="normal" scheduling="fixed-work">
