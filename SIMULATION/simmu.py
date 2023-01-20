@@ -29,15 +29,23 @@ class simmu:
         )
 
         self.iteration = 0
-        self.pos = np.zeros( ( 3 , 2 ) )
-        self.vel = np.zeros( ( 3 , 2 ) )
+        self.pos : np.ndarray = np.zeros( ( 3 , 2 ) )
+        self.vel : np.ndarray = np.zeros( ( 3 , 2 ) )
     
     def __call__( self ):
         
+        #-------------------------------------
+        # Here the simulation haven't even begun.
+        # Initialize planets positions and return
+        # the starting values
         if self.iteration == 0:
             self.init_planets()
             pass
-
+        
+        #----------------------------------------
+        # Elapse one second of motion using the 
+        # basic gravitational equations and iterate
+        # using the rung kutta method.
         elif self.iteration < self.max_iter:
             
             t1 = 1/self.gran
@@ -79,3 +87,15 @@ class simmu:
         # position of the 3rd planet is deduced from
         # the previous 2
         self.pos[ 2 ] = -( self.pos[ 1 ] + self.pos[ 0 ] )
+    
+    def get_acc( self ):
+
+        xs : np.ndarray = self.pos[ : , 0 ]
+        dx = xs.reshape( ( 1 , 3 ) ) - xs.reshape( ( 3 , 1 ) )
+        dx = remove_diagonals( dx )
+
+        ys : np.ndarray = self.pos[ : , 1 ]
+        dy = ys.reshape( ( 1 , 3 ) ) - ys.reshape( ( 3 , 1 ) )
+        dy = remove_diagonals( dx )
+
+        dist_sqr = dx**2 + dy**2
