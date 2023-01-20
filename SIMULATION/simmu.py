@@ -39,9 +39,15 @@ class simmu:
             pass
 
         elif self.iteration < self.max_iter:
-            # code here
-            pass
+            
+            t1 = 1/self.gran
+            t2 = ( t1**2 )/2
+            for _ in range( self.gran ):
 
+                acc = self.get_acc()
+                self.pos += self.vel*t1 + acc*t2
+                self.vel += acc*t1
+            
         self.iteration += 1
         tup = (
             self.iteration - 1,
