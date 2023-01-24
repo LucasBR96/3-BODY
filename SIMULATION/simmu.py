@@ -35,35 +35,36 @@ def rmv_diagonals( mat : np.ndarray ) -> np.ndarray:
 
 class simmu:
 
-    MIN_GRAN = 10
-    MAX_GRAN = 100
+    MIN_GRAN = 1e-4
+    MAX_GRAN = 1e-1
 
-    MIN_ITER = 2048
-    MAX_ITER = 4096
+    MIN_ITER = 10
+    MAX_ITER = 100
 
-    RADIUS = .1
+    RADIUS = .05
     MAX_ACCL = ( 2*RADIUS )**( -2 )
 
-    def __init__( self , gran = 10 , max_iter = 2048 ):
+    def __init__( self , h_step = 1/30 , run_time = 10 ):
         
         #----------------------------------------------
         # subdivisions of one second
-        self.gran = np.clip(
-            gran,
+        self.t1 = np.clip(
+            h_step,
             simmu.MIN_GRAN,
             simmu.MAX_GRAN
         )
+        self.t2 = .5*( self.t1**2 )
 
         #----------------------------------------------
         # maximum number of iterations before the simulation
         # ends
-        self.max_iter = np.clip(
-            max_iter,
+        self.run_time = np.clip(
+            run_time,
             simmu.MIN_ITER,
             simmu.MAX_ITER
         )
 
-        self.iteration = 0
+        self.curr_time = 0
         self.pos : np.ndarray = np.zeros( ( 3 , 2 ) )
         self.vel : np.ndarray = np.zeros( ( 3 , 2 ) )
     
@@ -73,7 +74,7 @@ class simmu:
         # Here the simulation haven't even begun.
         # Initialize planets positions and return
         # the starting values
-        if self.iteration == 0:
+        if self.curr_time == 0:
             self.init_planets()
             pass
         
@@ -81,22 +82,19 @@ class simmu:
         # Elapse one second of motion using the 
         # basic gravitational equations and iterate
         # using the rung kutta method.
-        elif self.iteration < self.max_iter:
-            
-            t1 = 1/self.gran
-            t2 = ( t1**2 )/2
-            for _ in range( self.gran ):
+        elif self.curr_time < self.run_time:
 
-                acc = self.get_acc()
-                self.pos += self.vel*t1 + acc*t2
-                self.vel += acc*t1
+            acc = self.get_acc()
+            self.pos += self.vel*self.t1 + acc*self.t2
+            self.vel += acc*self.t1
             
-        self.iteration += 1
         tup = (
-            self.iteration - 1,
+            self.curr_time,
             self.pos.copy(),
             self.vel.copy()
         )
+        self.curr_time += self.t1
+        
         return tup
 
     def init_planets( self ):
@@ -131,7 +129,7 @@ class simmu:
 
         ys : np.ndarray = self.pos[ : , 1 ]
         dy = ys.reshape( ( 1 , 3 ) ) - ys.reshape( ( 3 , 1 ) )
-        dy = rmv_diagonals( dx )
+        dy = rmv_diagonals( dy )
 
         dist_sqr = dx**2 + dy**2
 
@@ -147,8 +145,8 @@ class simmu:
         )
 
         dist = np.sqrt( dist_sqr )
-        ax   = mod_acc*( -dx/dist )
-        ay   = mod_acc*( -dy/dist )
+        ax   = mod_acc*( dx/dist )
+        ay   = mod_acc*( dy/dist )
 
         acc = np.zeros( ( 3 , 2 ) )
         acc[ : , 0 ] = ax.sum( axis = 1 )
