@@ -131,7 +131,7 @@ class simmu:
 
         ys : np.ndarray = self.pos[ : , 1 ]
         dy = ys.reshape( ( 1 , 3 ) ) - ys.reshape( ( 3 , 1 ) )
-        dy = rmv_diagonals( dx )
+        dy = rmv_diagonals( dy )
 
         dist_sqr = dx**2 + dy**2
 
@@ -147,8 +147,8 @@ class simmu:
         )
 
         dist = np.sqrt( dist_sqr )
-        ax   = mod_acc*( -dx/dist )
-        ay   = mod_acc*( -dy/dist )
+        ax   = mod_acc*( dx/dist )
+        ay   = mod_acc*( dy/dist )
 
         acc = np.zeros( ( 3 , 2 ) )
         acc[ : , 0 ] = ax.sum( axis = 1 )
