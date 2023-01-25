@@ -41,8 +41,8 @@ class simmu:
     MIN_ITER = 10
     MAX_ITER = 100
 
-    RADIUS = .05
-    MAX_ACCL = ( 2*RADIUS )**( -2 )
+    RADIUS = 5*1e-3
+    MIN_DIST = ( 2*RADIUS )**( 2 )
 
     def __init__( self , h_step = 1/30 , run_time = 10 ):
         
@@ -120,6 +120,13 @@ class simmu:
         # position of the 3rd planet is deduced from
         # the previous 2
         self.pos[ 2 ] = -( self.pos[ 1 ] + self.pos[ 0 ] )
+
+        #------------------------------------------
+        # All velocities are random, with module equal to
+        # 1
+        theta = 2*np.pi*np.random.random( 3 )
+        self.vel[ : , 0 ] = np.cos( theta )
+        self.vel[ : , 1 ] = np.sin( theta )
     
     def get_acc( self ):
 
@@ -138,12 +145,11 @@ class simmu:
         # numeric reasons, if the square distance
         # is less than the squared sum of two planet
         # radius, the aceleration is capped.
-        mod_acc = np.where(
-            dist_sqr > simmu.MAX_ACCL**( -1 ),
-            dist_sqr**( -1 ),
-            simmu.MAX_ACCL
+        mod_acc = 1/np.clip(
+            dist_sqr,
+            simmu.MIN_DIST
         )
-
+        
         dist = np.sqrt( dist_sqr )
         ax   = mod_acc*( dx/dist )
         ay   = mod_acc*( dy/dist )
