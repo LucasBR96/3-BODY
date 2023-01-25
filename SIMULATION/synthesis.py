@@ -47,7 +47,7 @@ def simulate( simulation_id , verbose = True ):
 
     Sm = simmu()
     meta_tup = None 
-    while Sm.iteration < 10:
+    while Sm.curr_time < Sm.run_time:
 
         tup = Sm()
         record_iteration( simulation_id , tup )
