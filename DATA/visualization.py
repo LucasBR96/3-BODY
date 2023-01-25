@@ -3,6 +3,8 @@ import matplotlib
 import matplotlib.pyplot as plt
 import os
 
+import math
+
 def sample_simulation( simu_id ):
 
     df = pd.read_csv( f"DATA/simu/simulacao_{simu_id}.csv")
@@ -16,18 +18,28 @@ def sample_simulation( simu_id ):
         dfs.append( pos )
     
     new_d = pd.concat( dfs , axis = 1  )
-    print( new_d )
     return new_d
 
-def plot_simulation( simu_df : pd.DataFrame , simu_id ):
+def plot_simulation( simu_id , num_points = None ):
+
+    simu_df = sample_simulation( simu_id )
+
+    if num_points is None:
+        num_points = len( simu_df )
+    num_ticks = int( math.sqrt( num_points ) )
 
     colors = [ "red" , "green" , "blue" ]
     for i in range( 3 ):
-        x = simu_df[ f"x_{i}" ].to_numpy()
-        y = simu_df[ f"y_{i}" ].to_numpy()
+
+        x = simu_df[ f"x_{i}" ].to_numpy()[ :num_points ]
+        y = simu_df[ f"y_{i}" ].to_numpy()[ :num_points ]
         plt.plot( x , y ,color = colors[ i ]  )
+
+        x_ticks = x[ ::num_ticks ]
+        y_ticks = y[ ::num_ticks ]
+        plt.scatter( x_ticks , y_ticks , color = colors[ i ] , marker = "*" )
+
     plt.title( f"Simulação #{simu_id}" )
     plt.show()
 
-df = sample_simulation( 0 )
-plot_simulation( df , 0 )
+plot_simulation( 0 )
