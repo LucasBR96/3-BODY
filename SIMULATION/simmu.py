@@ -195,7 +195,8 @@ class simmu:
         # radius, the aceleration is capped.
         mod_acc = 1/np.clip(
             dist_sqr,
-            simmu.MIN_DIST
+            simmu.MIN_DIST,
+            None
         )
         
         dist = np.sqrt( dist_sqr )
