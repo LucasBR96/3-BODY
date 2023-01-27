@@ -119,6 +119,9 @@ class simmu:
         elif self.curr_time < self.run_time:
 
             acc = self.get_acc()
+            if self.adaptative:
+                self.update_tstep( acc )
+            
             self.pos += self.vel*self.t1 + acc*self.t2
             self.vel += acc*self.t1
             
@@ -192,3 +195,12 @@ class simmu:
         acc[ : , 0 ] = ax.sum( axis = 1 )
         acc[ : , 1 ] = ay.sum( axis = 1 )
         return acc
+    
+    def update_tstep( self , acc ):
+        
+        acc_squared = ( acc**2 ).sum( axis = 1 )
+        acc_mod     = np.sqrt( acc_squared )
+        max_acc     = acc_mod.max()
+        
+        self.t1 = self.t_adpt( max_acc )
+        self.t2 = .5*( self.t1**2 )
