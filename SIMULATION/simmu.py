@@ -55,7 +55,7 @@ class simmu:
     MIN_GRAN = 1e-4
     MAX_GRAN = 1e-1
 
-    MIN_ITER = 10
+    MIN_ITER = 1
     MAX_ITER = 100
 
     RADIUS = 0.1
@@ -127,7 +127,7 @@ class simmu:
         # Elapse one second of motion using the 
         # basic gravitational equations and iterate
         # using the rung kutta method.
-        elif self.curr_time < self.run_time:
+        elif 0 < self.curr_time < self.run_time:
 
             acc = self.get_acc()
             if self.adaptative:

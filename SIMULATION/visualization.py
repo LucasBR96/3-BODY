@@ -23,6 +23,7 @@ def sample_simulation( simu_id ):
 def plot_simulation( simu_id , num_points = None ):
 
     simu_df = sample_simulation( simu_id )
+    fig , ax = plt.subplots()
 
     if num_points is None:
         num_points = len( simu_df )
@@ -33,13 +34,11 @@ def plot_simulation( simu_id , num_points = None ):
 
         x = simu_df[ f"x_{i}" ].to_numpy()[ :num_points ]
         y = simu_df[ f"y_{i}" ].to_numpy()[ :num_points ]
-        plt.plot( x , y ,color = colors[ i ]  )
+        ax.plot( x , y ,color = colors[ i ]  )
 
         x_ticks = x[ ::num_ticks ]
         y_ticks = y[ ::num_ticks ]
-        plt.scatter( x_ticks , y_ticks , color = colors[ i ] , marker = "*" )
+        ax.scatter( x_ticks , y_ticks , color = colors[ i ] , marker = "*" )
 
-    plt.title( f"Simulação #{simu_id}" )
-    plt.show()
-
-plot_simulation( 0 )
+    ax.set_title( f"Simulação #{simu_id}" )
+    return ax
