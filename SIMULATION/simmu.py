@@ -69,7 +69,7 @@ class simmu:
 
     VEL_0 = np.zeros( ( 3 , 2 ) )
 
-    def __init__( self , h_step = 1/30 , run_time = 10.
+    def __init__( self , h_step = .02 , run_time = 10.
     , adaptative = False , manual_setting = False ,
     pos_0 = None , vel_0 = None ):
         
@@ -98,9 +98,20 @@ class simmu:
             simmu.MAX_ITER
         )
         self.curr_time = 0
-
-        self.pos : np.ndarray = np.zeros( ( 3 , 2 ) )
-        self.vel : np.ndarray = np.zeros( ( 3 , 2 ) )
+        
+        #-------------------------------------------------
+        # Setting up initial positions and velocities
+        self.manual_setting = manual_setting
+        if not manual_setting:
+            pos_0 = np.zeros( ( 3 , 2 ) )
+            vel_0 = np.zeros( ( 3 , 2 ) )
+        else:
+            if pos_0 is None:
+                pos_0 = simmu.POS_0.copy()
+            if vel_0 is None:
+                vel_0 = simmu.VEL_0.copy()
+        self.pos = pos_0
+        self.vel = vel_0
     
     def __call__( self ):
         
@@ -108,7 +119,7 @@ class simmu:
         # Here the simulation haven't even begun.
         # Initialize planets positions and return
         # the starting values
-        if self.curr_time == 0:
+        if not( self.curr_time or self.manual_setting ):
             self.init_planets()
             pass
         
