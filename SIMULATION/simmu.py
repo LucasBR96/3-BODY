@@ -70,7 +70,7 @@ class simmu:
     VEL_0 = np.zeros( ( 3 , 2 ) )
 
     def __init__( self , h_step = .02 , run_time = 10.
-    , adaptative = False , manual_setting = False ,
+    , adaptative = True , manual_setting = False ,
     pos_0 = None , vel_0 = None ):
         
         #----------------------------------------------
