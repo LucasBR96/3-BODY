@@ -33,6 +33,23 @@ def rmv_diagonals( mat : np.ndarray ) -> np.ndarray:
     new_mat[ 2 , 1 ] = mat[ 2 , 1 ]
     return new_mat
 
+
+class tstep_adapter:
+    
+    def __init__( self , t_base , acc = None ):
+
+        self.t_base = t_base
+        self.acc = acc
+    
+    def __call__( self , new_acc ):
+
+        if new_acc:
+            old_acc , self.acc = self.acc , new_acc
+            if not( old_acc is None):
+                old_t = self.t_base
+                self.t_base = np.sqrt( old_acc/new_acc )*old_t
+        return self.t_base
+
 class simmu:
 
     MIN_GRAN = 1e-4
@@ -41,19 +58,36 @@ class simmu:
     MIN_ITER = 10
     MAX_ITER = 100
 
-    RADIUS = 5*1e-3
+    RADIUS = 0.1
     MIN_DIST = ( 2*RADIUS )**( 2 )
 
-    def __init__( self , h_step = 1/30 , run_time = 10 ):
+    POS_0 = np.array([
+        [ 1. , 0. ],
+        [ -1. , 1 ],
+        [ 0 , -1. ]
+    ])
+
+    VEL_0 = np.zeros( ( 3 , 2 ) )
+
+    def __init__( self , h_step = .02 , run_time = 10.
+    , adaptative = False , manual_setting = False ,
+    pos_0 = None , vel_0 = None ):
         
         #----------------------------------------------
-        # subdivisions of one second
+        # time-step size
         self.t1 = np.clip(
             h_step,
             simmu.MIN_GRAN,
             simmu.MAX_GRAN
         )
         self.t2 = .5*( self.t1**2 )
+
+        #------------------------------------------------
+        # adptation settings
+        self.adaptative = adaptative
+        self.t_adpt = None
+        if adaptative:
+            self.t_adpt = tstep_adapter( self.t1 )
 
         #----------------------------------------------
         # maximum number of iterations before the simulation
@@ -63,10 +97,21 @@ class simmu:
             simmu.MIN_ITER,
             simmu.MAX_ITER
         )
-
         self.curr_time = 0
-        self.pos : np.ndarray = np.zeros( ( 3 , 2 ) )
-        self.vel : np.ndarray = np.zeros( ( 3 , 2 ) )
+        
+        #-------------------------------------------------
+        # Setting up initial positions and velocities
+        self.manual_setting = manual_setting
+        if not manual_setting:
+            pos_0 = np.zeros( ( 3 , 2 ) )
+            vel_0 = np.zeros( ( 3 , 2 ) )
+        else:
+            if pos_0 is None:
+                pos_0 = simmu.POS_0.copy()
+            if vel_0 is None:
+                vel_0 = simmu.VEL_0.copy()
+        self.pos = pos_0
+        self.vel = vel_0
     
     def __call__( self ):
         
@@ -74,7 +119,7 @@ class simmu:
         # Here the simulation haven't even begun.
         # Initialize planets positions and return
         # the starting values
-        if self.curr_time == 0:
+        if not( self.curr_time or self.manual_setting ):
             self.init_planets()
             pass
         
@@ -85,6 +130,9 @@ class simmu:
         elif self.curr_time < self.run_time:
 
             acc = self.get_acc()
+            if self.adaptative:
+                self.update_tstep( acc )
+            
             self.pos += self.vel*self.t1 + acc*self.t2
             self.vel += acc*self.t1
             
@@ -147,7 +195,8 @@ class simmu:
         # radius, the aceleration is capped.
         mod_acc = 1/np.clip(
             dist_sqr,
-            simmu.MIN_DIST
+            simmu.MIN_DIST,
+            None
         )
         
         dist = np.sqrt( dist_sqr )
@@ -158,3 +207,12 @@ class simmu:
         acc[ : , 0 ] = ax.sum( axis = 1 )
         acc[ : , 1 ] = ay.sum( axis = 1 )
         return acc
+    
+    def update_tstep( self , acc ):
+        
+        acc_squared = ( acc**2 ).sum( axis = 1 )
+        acc_mod     = np.sqrt( acc_squared )
+        max_acc     = acc_mod.max()
+        
+        self.t1 = self.t_adpt( max_acc )
+        self.t2 = .5*( self.t1**2 )
