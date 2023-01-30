@@ -38,7 +38,7 @@ def record_iteration( simulation_id, tup ):
 
     # print( s )
 
-def simulate( simulation_id , verbose = False , Sm = None ):
+def simulate( simulation_id , verbose = False , Sm = None , step_size = None ):
     
     fl = open( f"DATA/simu/simulacao_{simulation_id}.csv" , mode = "a" )
     fl.write( SIMU_HEAD )
@@ -47,9 +47,17 @@ def simulate( simulation_id , verbose = False , Sm = None ):
     if Sm is None:
         Sm = simmu()
 
+    base_step = 0.
+    if step_size is None:
+        step_size = 0
+    
     while Sm.curr_time < Sm.run_time:
 
         tup = Sm()
-        record_iteration( simulation_id , tup )
+        
+        if not( step_size ) or ( Sm.run_time > step_size + base_step ):
+            record_iteration( simulation_id , tup )
+            base_step += step_size
+            
         if verbose:
             print_iter( tup )
