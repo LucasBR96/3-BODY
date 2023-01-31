@@ -36,9 +36,12 @@ def plot_simulation( simu_id , num_points = None ):
         y = simu_df[ f"y_{i}" ].to_numpy()[ :num_points ]
         ax.plot( x , y ,color = colors[ i ]  )
 
-        x_ticks = x[ ::num_ticks ]
-        y_ticks = y[ ::num_ticks ]
+        # x_ticks = x[ ::num_ticks ]
+        # y_ticks = y[ ::num_ticks ]
+        x_ticks = x[ 0 ]
+        y_ticks = y[ 0 ]
         ax.scatter( x_ticks , y_ticks , color = colors[ i ] , marker = "*" )
 
     ax.set_title( f"Simulação #{simu_id}" )
     return ax
+

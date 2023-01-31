@@ -8,7 +8,10 @@ import time as tm
 import numpy as np
 
 # internal modules ----------------------------------------------------
-from simmu import simmu
+try:
+    from simmu import simmu
+except ModuleNotFoundError:
+    from SIMULATION.simmu import simmu
 
 # CONSTANTS ----------------------------------------------------------
 SIMU_HEAD = "iter_num,bod_id,x,y,vx,vy\n"
@@ -55,9 +58,9 @@ def simulate( simulation_id , verbose = False , Sm = None , step_size = None ):
 
         tup = Sm()
         
-        if not( step_size ) or ( Sm.run_time > step_size + base_step ):
+        if not( step_size ) or ( Sm.curr_time >= step_size + base_step ):
             record_iteration( simulation_id , tup )
             base_step += step_size
-            
+
         if verbose:
             print_iter( tup )
