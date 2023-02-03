@@ -9,15 +9,24 @@ def get_i1( n , i ):
 
     top = n
     bottom = 0 
-    while bottom < top:
+    while bottom < top - 1:
         
-        mid = ( top + bottom )//2
-        mid_i = mid*n - ( mid + 1 )*mid//2
-        if mid_i > i:
-            top = mid - 1
-        else:
-            bottom = mid + 1
+        print( f"b , t = {bottom} , {top}" )
 
+        mid = ( top + bottom )//2
+        print( f"m = {mid}")
+
+        mid_i = mid*n - ( mid + 1 )*mid//2
+        print( f"mi = {mid_i}")
+
+        if mid_i > i:
+            top = mid
+        else:
+            bottom = mid
+        
+        print( "-"*10 )
+
+    print( str( bottom ) + "\n" )
     return bottom
 
 def get_i2( n , i , i1 ):
@@ -92,4 +101,6 @@ class stellarDset( Dataset ):
 
 if __name__ == "__main__":
 
-    get_i1( 5 , 7 )
+    get_i1( 6 , 7 )
+    get_i1( 6 , 9 )
+    get_i1( 6 , 1 )
