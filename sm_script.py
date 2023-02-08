@@ -7,7 +7,7 @@ if __name__ == "__main__":
     total_time = 60.
     r_step = 2*1e-2
 
-    for i in range( 100 ):
+    for i in range( 10 ):
         
         Sm = sm.simmu(
             h_step = h_step,

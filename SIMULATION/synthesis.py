@@ -65,7 +65,7 @@ def simulate( simulation_id , verbose = False , Sm = None , step_size = None ):
         if not( a ) or ( a and ( b or not c ) ):
             record_iteration( simulation_id , tup )
         
-        if a and c:
+        if a and b:
             base_step += step_size
 
         if verbose:

@@ -171,11 +171,11 @@ class simmu:
 
         #------------------------------------------
         # All velocities are random, with module equal to
-        # 1. The linear momentum must be equal to 0 , 0 
-        theta = 2*np.pi*np.random.random( 2 )
-        self.vel[ :2 , 0 ] = np.cos( theta )
-        self.vel[ :2 , 1 ] = np.sin( theta )
-        self.vel[ 2 ] = -( self.vel[ 1 ] + self.vel[ 0 ] )
+        # 1. 
+        theta = 2*np.pi*np.random.random( 3 )
+        self.vel[ : , 0 ] = np.cos( theta )
+        self.vel[ : , 1 ] = np.sin( theta )
+        # self.vel[ 2 ] = -( self.vel[ 1 ] + self.vel[ 0 ] )
     
     def get_acc( self ):
 
