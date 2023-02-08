@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 
 from functools import lru_cache
-from random import shuffle
+from random import shuffle ,choice
 
 @lru_cache( 100 )
 def get_i1( n : int , i : int ):
@@ -113,26 +113,21 @@ class stellarDset( Dataset ):
 
 class sampler:
 
-    def __init__( self , train = True , batch_size = 50 , num_sets = 10 ):
+    def __init__( self , train = True , batch_size = 50 ):
 
         self.batch_size = batch_size
-        self.num_sets = num_sets
-
         nums = range( 80 , 100 , 1 )
         if train:
             nums = range( 80 )
-        nums_lst = list( nums )
-        shuffle( nums_lst )
-        self.nums_lst = nums_lst
 
         active_sets = {}
-        for i in range( num_sets ):
-            x = nums_lst.pop()
-            active_sets[ x ] = DataLoader(
-                stellarDset( set_num = x ),
+        for i in nums:
+            D = DataLoader(
+                stellarDset( set_num = i ),
                 batch_size = batch_size,
                 shuffle = True
             )
+            active_sets[ i ] = iter( D )
         
         self.active_sets = active_sets
     
@@ -144,8 +139,19 @@ class sampler:
         yield tup 
 
     def fetch_data( self ):
-        pass
+        
+        while True:
+
+            if not self.active_sets:
+                return None
             
+            i = choice( self.active_sets.keys() )
+            try:
+                D = self.active_sets[ i ]
+                return next( D )
+
+            except StopIteration:
+                self.active_sets.pop( i )
              
 
 if __name__ == "__main__":
@@ -153,13 +159,17 @@ if __name__ == "__main__":
     # get_i1( 6 , 7 )
     # get_i1( 6 , 9 )
     # get_i1( 6 , 1 )
+    
+    # D = DataLoader( stellarDset( 10 ), batch_size = 5 )
+    # X , y = next( iter( D ) )
 
-    D = DataLoader( stellarDset( 10 ), batch_size = 5 )
-    X , y = next( iter( D ) )
+    s = sampler( batch_size = 5 )
+    X , y = next( iter( s ) )
 
     print( *X , sep = "\n" )
 
     print()
     print( *y , sep = "\n" )
 
+    
 
