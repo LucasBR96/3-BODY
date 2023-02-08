@@ -58,8 +58,14 @@ def simulate( simulation_id , verbose = False , Sm = None , step_size = None ):
 
         tup = Sm()
         
-        if not( step_size ) or ( Sm.curr_time >= step_size + base_step ):
+        a = bool( step_size )
+        b = ( Sm.curr_time >= step_size + base_step )
+        c = bool( Sm.curr_time )
+
+        if not( a ) or ( a and ( b or not c ) ):
             record_iteration( simulation_id , tup )
+        
+        if a and c:
             base_step += step_size
 
         if verbose:
