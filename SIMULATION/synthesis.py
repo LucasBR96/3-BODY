@@ -56,17 +56,17 @@ def simulate( simulation_id , verbose = False , Sm = None , step_size = None ):
     
     while Sm.curr_time < Sm.run_time:
 
-        tup = Sm()
-        
         a = bool( step_size )
         b = ( Sm.curr_time >= step_size + base_step )
         c = bool( Sm.curr_time )
+        
+        tup = Sm()
 
         if not( a ) or ( a and ( b or not c ) ):
             record_iteration( simulation_id , tup )
+            if verbose:
+                print_iter( tup )
         
         if a and b:
             base_step += step_size
 
-        if verbose:
-            print_iter( tup )

@@ -110,6 +110,8 @@ class stellarDset( Dataset ):
         y[ 4 ] = r2[ "x_2" ]
         y[ 5 ] = r2[ "y_2" ]
 
+        return X , y 
+
 
 class sampler:
 
@@ -145,7 +147,7 @@ class sampler:
             if not self.active_sets:
                 return None
             
-            i = choice( self.active_sets.keys() )
+            i = choice( list( self.active_sets.keys() ) )
             try:
                 D = self.active_sets[ i ]
                 return next( D )
@@ -163,7 +165,7 @@ if __name__ == "__main__":
     # D = DataLoader( stellarDset( 10 ), batch_size = 5 )
     # X , y = next( iter( D ) )
 
-    s = sampler( batch_size = 5 )
+    s = sampler( batch_size = 5 , train = False )
     X , y = next( iter( s ) )
 
     print( *X , sep = "\n" )
