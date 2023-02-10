@@ -2,13 +2,16 @@ import torch as tc
 import torch.utils as ut
 import torch.nn as tnn
 
+NUM_LAY = 10
+LAY_SIZE = 312
+
 class perceptron( tnn.Module ):
 
-    def __init__( self , in_size = 128 , out_size = 128 ):
+    def __init__( self , in_size = LAY_SIZE , out_size = LAY_SIZE ):
 
         super().__init__()
         self.lin = tnn.Linear( in_size , out_size )
-        self.rel = tnn.LeakyReLU( )
+        self.rel = tnn.ReLU( )
     
     def forward( self , X ):
 
@@ -23,9 +26,9 @@ class stellar_model( tnn.Module ):
 
         self.head = perceptron( 13 )
         self.body = tnn.Sequential(
-            *[ perceptron() for _ in range( 10 ) ]
+            *[ perceptron() for _ in range( NUM_LAY ) ]
         )
-        self.tail = tnn.Linear( 128 , 6)
+        self.tail = tnn.Linear( LAY_SIZE , 6 )
     
     def forward( self , X ):
         y = self.head( X )

@@ -115,15 +115,17 @@ class stellarDset( Dataset ):
 
 class sampler:
 
-    def __init__( self , train = True , batch_size = 50 ):
+    def __init__( self , train = True , batch_size = 50 , sets = None ):
 
         self.batch_size = batch_size
-        nums = range( 80 , 100 , 1 )
-        if train:
-            nums = range( 80 )
+
+        if ( sets is None ) and train:
+            sets = range( 80 )
+        elif ( sets is None ):
+            sets = range( 80 , 100 , 1 )
 
         active_sets = {}
-        for i in nums:
+        for i in sets:
             D = DataLoader(
                 stellarDset( set_num = i ),
                 batch_size = batch_size,
@@ -166,7 +168,9 @@ if __name__ == "__main__":
     # X , y = next( iter( D ) )
 
     s = sampler( batch_size = 5 , train = False )
-    X , y = next( iter( s ) )
+    m = iter( s )
+    X , y = next( m )
+    X , y = next( m )
 
     print( *X , sep = "\n" )
 
