@@ -2,3 +2,4 @@
 *.planner
 *.csv
 */__pycache__
+*.pt

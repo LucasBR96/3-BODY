@@ -1,7 +1,14 @@
-from dsamp import sampler , stellarDset
-from network_model import stellar_model
-from clock import clock
-from mov_avg import mob_mean_gen
+try:
+    from dsamp import sampler , stellarDset
+    from network_model import stellar_model
+    from clock import clock
+    from mov_avg import mob_mean_gen
+
+except ModuleNotFoundError:
+    from MODEL.dsamp import sampler , stellarDset
+    from MODEL.network_model import stellar_model
+    from MODEL.clock import clock
+    from MODEL.mov_avg import mob_mean_gen
 
 import torch as tc
 import torch.nn as tnn
@@ -12,6 +19,7 @@ import torch.utils.data as tdt
 from typing import *
 from random import shuffle
 import sys
+import os
 
 device = "cuda" if tc.cuda.is_available() else "cpu"
 
@@ -21,19 +29,20 @@ class train_app:
 
     def __init__( self , **kwargs ):
 
-        data_sets = list( range( 100 ) )
+        data_sets = kwargs.get( "data_sets" , list( range( 100 ) ) )
         shuffle( data_sets )
+        n = int( .8*len( data_sets ) )
 
         tr_batch_size = kwargs.get('tr_batch_size' , 500 )
         self.train_data = sampler(
             batch_size = tr_batch_size,
-            sets = data_sets[:80]
+            sets = data_sets[:n]
         )
 
         ts_batch_size = kwargs.get('ts_batch_size' , 500 )
         self.test_data = sampler(
             batch_size = ts_batch_size,
-            sets = data_sets[80:]
+            sets = data_sets[n:]
         )
 
         self.loss_fn = tnn.L1Loss()
@@ -43,14 +52,14 @@ class train_app:
 
         self.iter = 0
         self.record_interval = kwargs.get( "record_interval" , 1000 )
-        self.test_rec = mob_mean_gen()
-        self.train_rec = mob_mean_gen()
+        self.test_rec = mob_mean_gen( 25 )
+        self.train_rec = mob_mean_gen( 25 )
 
         self.min_loss = sys.maxsize
         self.i_min_loss = None
 
         self.buff = []
-        self.buff_lim = 100
+        self.buff_lim = kwargs.get( "buff_lim" , 100 )
 
         max_time = kwargs.get( "max_time" , 12 )
         time_type = kwargs.get( "time_type" , "hours" )
@@ -86,12 +95,11 @@ class train_app:
                 #------------------------------------------
                 # saving the model, if the performance on the
                 # test data set has improoved
-                self._save_model( rec[ 1 ] )
+                self._save_model( max( rec[ 1 ] , rec[ 0 ] ) )
             
             #------------------------------------------
             # Doing one iteration of the backprop algorithm
             update()
-
             self.iter += 1
 
     def _print_rec( self , rec ):
@@ -99,12 +107,19 @@ class train_app:
         iter_num , ts_val , tr_val , y , y_hat = rec
 
         print( f"iter #{iter_num} " + "-"*25 )
-        print(f"loss at training: {tr_val:.5f}")
-        print(f"loss at testing: {ts_val:.5f}")
         print()
 
-        print( y[ 0 ] )
-        print( y_hat[0] )
+        print("losses:")
+        print(f"\tat training: {tr_val:.5f}")
+        print(f"\tat testing: {ts_val:.5f}")
+        if self.iter:
+            print(f"\tbest: {self.min_loss:5f}")
+        print()
+
+        s_target = " ".join( f"{x:.5f}" for x in y )
+        print( "target | " + s_target )
+        s_made = " ".join( f"{x:.5f}" for x in y_hat )
+        print( "made | " + s_made )
         print()         
 
     def _push_rec( self , rec ):
@@ -120,7 +135,7 @@ class train_app:
 
         path = "DATA/performance.csv"
         with open( path , "a" ) as f:
-            if self.iter == 0:
+            if self.iter == self.buff_lim:
                 f.write(
                     "iter_num,ts_loss,tr_loss" + "\n"
                 )
@@ -166,9 +181,9 @@ class train_app:
         
         self.min_loss = ts_val
         self.i_min_loss = self.iter
-
+        param = [ x for x in self.model.parameters()]
         tc.save(
-            self.model.parameters(),
+            param,
             "DATA/model_params.pt"
         )
 
@@ -189,17 +204,21 @@ class train_app:
 if __name__ == "__main__":
 
     from time import sleep
-    cm = clock()
-
-    @cm.tick()
-    def boo( t ):
-        t._update_net()
-        sleep( .1 )
 
     t = train_app()
+    @t.ck.tick()
+    def update():
+        t._update_net()
+
+    cm = clock()
+    @cm.tick()
+    def boo( ):
+        update()
+        sleep( .01 )
+
     print( "tempo em ck | tempo em cm" )
     for _ in range( 10 ):
-        boo( t )
+        boo()
         # t._update_net()
         s1 = f"{ t.ck.base:.5f}".rjust( 11 )
         s2 = f"{ cm.base:.5f}".rjust( 11 )
