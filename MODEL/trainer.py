@@ -15,9 +15,9 @@ import sys
 
 device = "cuda" if tc.cuda.is_available() else "cpu"
 
-class train_app:
+# CK : clock = clock()
 
-    CK : clock = clock()
+class train_app:
 
     def __init__( self , **kwargs ):
 
@@ -53,12 +53,16 @@ class train_app:
         self.buff_lim = 100
 
         max_time = kwargs.get( "max_time" , 12 )
-        train_app.CK.max_time = max_time
-    
-    def run( self ):
+        time_type = kwargs.get( "time_type" , "hours" )
+        self.ck = clock( max_time , time_type )
 
-        ck = train_app.CK
-        while not ck.is_done():
+    def run( self ):
+        
+        @self.ck.tick()
+        def update():
+            self._update_net()
+        
+        while not self.ck.is_done():
 
             if self.iter%self.record_interval == 0:
 
@@ -86,7 +90,7 @@ class train_app:
             
             #------------------------------------------
             # Doing one iteration of the backprop algorithm
-            self._update_net()
+            update()
 
             self.iter += 1
 
@@ -168,7 +172,7 @@ class train_app:
             "DATA/model_params.pt"
         )
 
-    CK.tick()
+    # @CK.tick()
     def _update_net( self ):
 
         X , y = self.train_data.fetch_data()
@@ -184,8 +188,19 @@ class train_app:
 
 if __name__ == "__main__":
 
-    t = train_app()
-    print( t.CK.max_time )
-    for _ in range( 5 ):
+    from time import sleep
+    cm = clock()
+
+    @cm.tick()
+    def boo( t ):
         t._update_net()
-        print( t.CK.base )
+        sleep( .1 )
+
+    t = train_app()
+    print( "tempo em ck | tempo em cm" )
+    for _ in range( 10 ):
+        boo( t )
+        # t._update_net()
+        s1 = f"{ t.ck.base:.5f}".rjust( 11 )
+        s2 = f"{ cm.base:.5f}".rjust( 11 )
+        print( s1 + " | " + s2 )

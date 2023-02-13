@@ -18,12 +18,12 @@ class clock:
     def tick( self ):
         
         def foo( fun ):
-
-            ti = time.time()
-            fun()
-            tj = time.time()
-            self.base += tj - ti
-
+            def bar( *args ):
+                ti = time.time()
+                fun( *args )
+                tj = time.time()
+                self.base += tj - ti
+            return bar
         return foo
 
     def is_done( self ):
