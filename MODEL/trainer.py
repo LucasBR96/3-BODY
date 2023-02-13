@@ -30,7 +30,15 @@ class clock:
         self.max_time = max_time*k
 
     def tick( self ):
-        pass
+        
+        def foo( fun ):
+
+            ti = time.time()
+            fun()
+            tj = time.time()
+            self.base += tj - ti
+
+        return foo
 
     def is_done( self ):
         return self.base >= self.max_time
@@ -61,6 +69,8 @@ class mob_mean_gen:
 
 class train_app:
 
+    CK : clock = None
+
     def __init__( self , **kwargs ):
 
         data_sets = list( range( 100 ) )
@@ -87,17 +97,20 @@ class train_app:
         self.record_interval = kwargs.get( "record_interval" , 1000 )
         self.test_rec = mob_mean_gen()
         self.train_rec = mob_mean_gen()
+
         self.min_loss = sys.maxsize
+        self.i_min_loss = None
 
         self.buff = []
         self.buff_lim = 100
 
-        max_time = kwargs.get( "max_time" , 8 )
-        self.ck = clock( max_time )
+        max_time = kwargs.get( "max_time" , 12 )
+        train_app.CK = clock( max_time )
     
     def run( self ):
 
-        while not self.ck.is_done():
+        ck = train_app.CK
+        while not ck.is_done():
 
             if self.iter%self.record_interval == 0:
 
@@ -112,8 +125,11 @@ class train_app:
                 self._print_rec( rec )
 
                 #-----------------------------------------
-                # saving the last record on a buffer
+                # saving the last record on a buffer. and if
+                # the buffer is full, save it on a csv file
                 self._push_rec( rec )
+                if len( self.buff ) >= self.buff_lim:
+                    self._save_buff()
 
                 #------------------------------------------
                 # saving the model, if the performance on the
@@ -123,6 +139,8 @@ class train_app:
             #------------------------------------------
             # Doing one iteration of the backprop algorithm
             self._update_net()
+
+            self.iter += 1
 
     def _print_rec( self , rec ):
 
@@ -146,18 +164,20 @@ class train_app:
             tr_val)
         )
 
-    def _update_net( self ):
+    def _save_buff( self ):
 
-        X , y = self.train_data.fetch_data()
-        X = X.to( device )
-        y = y.to( device )
-
-        y_hat = self.model( X )
-        loss = self.loss_fn( y_hat , y )
-
-        self.opm.zero_grad()
-        loss.backward()
-        self.opm.step()
+        path = "DATA/performance.csv"
+        with open( path , "a" ) as f:
+            if self.iter == 0:
+                f.write(
+                    "iter_num,ts_loss,tr_loss" + "\n"
+                )
+            for rec in self.buff:
+                iter_num,ts_loss,tr_loss = rec
+                f.write(
+                    f"{iter_num},{ts_loss},{tr_loss}" + "\n"
+                )
+        self.buff.clear() 
     
     def _generate_record( self ):
 
@@ -189,4 +209,27 @@ class train_app:
 
     def _save_model( self , ts_val : float ):
 
-        if ts_val > self.low_rec_val
+        if ts_val >= self.min_loss:
+            return
+        
+        self.min_loss = ts_val
+        self.i_min_loss = self.iter
+
+        tc.save(
+            self.model.parameters(),
+            "DATA/model_params.pt"
+        )
+
+    @CK.tick()
+    def _update_net( self ):
+
+        X , y = self.train_data.fetch_data()
+        X = X.to( device )
+        y = y.to( device )
+
+        y_hat = self.model( X )
+        loss = self.loss_fn( y_hat , y )
+
+        self.opm.zero_grad()
+        loss.backward()
+        self.opm.step()
