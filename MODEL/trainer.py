@@ -1,5 +1,7 @@
-from MODEL.dsamp import sampler , stellarDset
-from MODEL.network_model import stellar_model
+from dsamp import sampler , stellarDset
+from network_model import stellar_model
+from clock import clock
+from mov_avg import mob_mean_gen
 
 import torch as tc
 import torch.nn as tnn
@@ -7,69 +9,15 @@ import torch.functional as tfn
 import torch.optim as top
 import torch.utils.data as tdt
 
-import time
 from typing import *
-from collections import deque
 from random import shuffle
 import sys
 
 device = "cuda" if tc.cuda.is_available() else "cpu"
 
-class clock:
-
-    def __init__(self, max_time = 8, format : Literal[ 'seconds' , 'minutes' , 'hours' ] = 'hours' ):
-        
-        self.format = format
-        self.base = 0
-
-        k = 1
-        if format == 'minutes':
-            k = 60
-        elif format == "hours":
-            k = 3600
-        self.max_time = max_time*k
-
-    def tick( self ):
-        
-        def foo( fun ):
-
-            ti = time.time()
-            fun()
-            tj = time.time()
-            self.base += tj - ti
-
-        return foo
-
-    def is_done( self ):
-        return self.base >= self.max_time
-    
-class mob_mean_gen:
-
-    def __init__( self , horizon = 100 ):
-        
-        self.horizon = horizon
-        self.mean = 0
-        self.buff = deque(list())
-    
-    def __call__(self, val) -> Any:
-        
-        self.buff.append( val )
-        n = len( self.buff ) - 1
-
-        if n == 0:
-            self.mean = val
-        elif n < self.horizon:
-            self.mean = ( self.mean*n + val )/( n + 1 )
-        else:
-            bottom = self.buff.popleft()
-            self.mean += ( val - bottom )/n
-        
-        return self.mean
-    
-
 class train_app:
 
-    CK : clock = None
+    CK : clock = clock()
 
     def __init__( self , **kwargs ):
 
@@ -105,7 +53,7 @@ class train_app:
         self.buff_lim = 100
 
         max_time = kwargs.get( "max_time" , 12 )
-        train_app.CK = clock( max_time )
+        train_app.CK.max_time = max_time
     
     def run( self ):
 
@@ -220,7 +168,7 @@ class train_app:
             "DATA/model_params.pt"
         )
 
-    @CK.tick()
+    CK.tick()
     def _update_net( self ):
 
         X , y = self.train_data.fetch_data()
@@ -233,3 +181,11 @@ class train_app:
         self.opm.zero_grad()
         loss.backward()
         self.opm.step()
+
+if __name__ == "__main__":
+
+    t = train_app()
+    print( t.CK.max_time )
+    for _ in range( 5 ):
+        t._update_net()
+        print( t.CK.base )
