@@ -107,7 +107,7 @@ class train_app:
         iter_num , ts_val , tr_val , y , y_hat = rec
 
         print( f"iter #{iter_num} " + "-"*25 )
-        print( self.ck.base )
+        print( "time_passed: " + str( self.ck ) )
         print()
 
         print("losses:")
@@ -134,6 +134,9 @@ class train_app:
 
     def _save_buff( self ):
 
+        print()
+        print( "saving buffer ....." , end = " ")
+
         path = "DATA/performance.csv"
         with open( path , "a" ) as f:
             if self.buff[0][0] == 0:
@@ -146,7 +149,8 @@ class train_app:
                     f"{iter_num},{ts_loss},{tr_loss}" + "\n"
                 )
         self.buff.clear() 
-    
+        print( "done!\n" )
+
     def _generate_record( self ):
 
         with tc.no_grad():
@@ -180,6 +184,8 @@ class train_app:
         if ts_val >= self.min_loss:
             return
         
+        print()
+        print( "saving model ....." , end = " ")
         self.min_loss = ts_val
         self.i_min_loss = self.iter
         param = [ x for x in self.model.parameters()]
@@ -187,7 +193,8 @@ class train_app:
             param,
             "DATA/model_params.pt"
         )
-
+        print( "done!\n" )
+        
     # @CK.tick()
     def _update_net( self ):
 

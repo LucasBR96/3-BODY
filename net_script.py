@@ -96,13 +96,16 @@ from random import sample
 if __name__ == "__main__":
 
     M = sample( range( 100 ) , 10 )
-    K = {'data_sets': M,
-    'ts_batch_size': 100,
-    'tr_batch_size': 100,
-    'record_interval': 20,
+    K = {
+    # 'data_sets': M,
+    'ts_batch_size': 500,
+    'tr_batch_size': 500,
+    'record_interval': 100,
     'max_time': 10,
-    'time_type': 'minutes',
-    'buff_lim': 25}
+    'time_type': 'hours',
+    'buff_lim': 25,
+    'lr':1e-5
+    }
 
     tr = train_app( **K )
     tr.run()

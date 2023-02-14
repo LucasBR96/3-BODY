@@ -36,8 +36,8 @@ class clock:
         num_min , num_secs = base//60 , base%60
         num_hrs , num_min = num_min//60 , num_min%60
 
-        secs_str = f"{num_secs:.4f}".rjust( 6 , "0")
-        min_str = f"{num_min}".rjust( 2 , "0" )
-        hrs_str = f"{num_hrs}".rjust( 2 , "0" )
+        secs_str = f"{num_secs:.4f}".rjust( 7 , "0")
+        min_str = f"{int(num_min)}".rjust( 2 , "0" )
+        hrs_str = f"{int(num_hrs)}".rjust( 2 , "0" )
 
         return f"{hrs_str}:{min_str}:{secs_str}"

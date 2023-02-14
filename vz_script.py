@@ -1,19 +1,25 @@
 from SIMULATION.visualization import plot_simulation
 import matplotlib.pyplot as plt
 import sys
+import pandas as pd
 
 if __name__ == "__main__":
 
-    arglst = sys.argv
-    arglst.append( '0' )
+    # arglst = sys.argv
+    # arglst.append( '0' )
 
-    try:
-        n = int( arglst[ 1 ] )
-    except ValueError:
-        s = f"the value {arglst[1]} could not be casted, setting to 0."
-        print( s )
-        n = 0
+    # try:
+    #     n = int( arglst[ 1 ] )
+    # except ValueError:
+    #     s = f"the value {arglst[1]} could not be casted, setting to 0."
+    #     print( s )
+    #     n = 0
     
-    plot_simulation( n )
+    # plot_simulation( n )
+    # plt.show()
+    
+    df = pd.read_csv( "DATA/performance.csv" )
+    df.set_index( "iter_num" , inplace = True )
+    df.plot()
     plt.show()
-    
+
