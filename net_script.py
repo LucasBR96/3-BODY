@@ -1,6 +1,7 @@
 # from MODEL.dsamp import sampler , stellarDset
 # from MODEL.network_model import stellar_model
 from MODEL.trainer import train_app
+from random import sample
 
 # import torch as tc
 # import torch.nn as tnn
@@ -94,11 +95,12 @@ from MODEL.trainer import train_app
 
 if __name__ == "__main__":
 
-    K = {'data_sets': [56, 15, 39, 40, 18, 95, 1, 7, 4, 18, 21, 3, 69, 67, 2],
-    'ts_batch_size': 120,
-    'tr_batch_size': 120,
-    'record_interval': 75,
-    'max_time': 30,
+    M = sample( range( 100 ) , 10 )
+    K = {'data_sets': M,
+    'ts_batch_size': 100,
+    'tr_batch_size': 100,
+    'record_interval': 20,
+    'max_time': 10,
     'time_type': 'minutes',
     'buff_lim': 25}
 

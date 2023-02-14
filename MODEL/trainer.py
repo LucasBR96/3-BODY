@@ -95,7 +95,7 @@ class train_app:
                 #------------------------------------------
                 # saving the model, if the performance on the
                 # test data set has improoved
-                self._save_model( max( rec[ 1 ] , rec[ 0 ] ) )
+                self._save_model( max( rec[ 1 ] , rec[ 2 ] ) )
             
             #------------------------------------------
             # Doing one iteration of the backprop algorithm
@@ -107,19 +107,20 @@ class train_app:
         iter_num , ts_val , tr_val , y , y_hat = rec
 
         print( f"iter #{iter_num} " + "-"*25 )
+        print( self.ck.base )
         print()
 
         print("losses:")
-        print(f"\tat training: {tr_val:.5f}")
-        print(f"\tat testing: {ts_val:.5f}")
+        print(f" at training: {tr_val:.5f}")
+        print(f" at testing: {ts_val:.5f}")
         if self.iter:
-            print(f"\tbest: {self.min_loss:5f}")
+            print(f" best: {self.min_loss:5f}")
         print()
 
         s_target = " ".join( f"{x:.5f}" for x in y )
         print( "target | " + s_target )
         s_made = " ".join( f"{x:.5f}" for x in y_hat )
-        print( "made | " + s_made )
+        print( "made   | " + s_made )
         print()         
 
     def _push_rec( self , rec ):
@@ -135,7 +136,7 @@ class train_app:
 
         path = "DATA/performance.csv"
         with open( path , "a" ) as f:
-            if self.iter == self.buff_lim:
+            if self.buff[0][0] == 0:
                 f.write(
                     "iter_num,ts_loss,tr_loss" + "\n"
                 )
