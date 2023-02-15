@@ -2,6 +2,7 @@
 # from MODEL.network_model import stellar_model
 from MODEL.trainer import train_app
 from random import sample
+import matplotlib.pyplot as plt
 
 # import torch as tc
 # import torch.nn as tnn
@@ -97,15 +98,19 @@ if __name__ == "__main__":
 
     M = sample( range( 100 ) , 10 )
     K = {
-    # 'data_sets': M,
+    'data_sets': M,
     'ts_batch_size': 200,
     'tr_batch_size': 200,
     'record_interval': 100,
-    'max_time': 20,
+    'max_time': 10,
     'time_type': 'minutes',
     'buff_lim': 25,
-    'lr':1e-4
+    'lr':1e-3
     }
 
     tr = train_app( **K )
     tr.run()
+    
+    df = tr.load_hist()
+    df.plot( title = "test" )
+    plt.show()

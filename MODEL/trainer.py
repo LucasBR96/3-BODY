@@ -155,7 +155,7 @@ class train_app:
                 #------------------------------------------
                 # saving the model, if the performance on the
                 # test data set has improoved
-                self._save_model( max( rec[ 1 ] , rec[ 2 ] ) )
+                self._save_model( rec )
             
             #------------------------------------------
             # Doing one iteration of the backprop algorithm
@@ -185,8 +185,8 @@ class train_app:
     def _push_rec( self , rec ):
 
         iter_num = rec[ "iter_num" ]
-        tr_val = rec[ "tr_val" ]
-        ts_val = rec[ "ts_val" ]
+        tr_val = rec[ "tr_loss" ]
+        ts_val = rec[ "ts_loss" ]
 
         self.buff.append(
             ( iter_num, 
@@ -208,6 +208,9 @@ class train_app:
             for rec in self.buff:
                 iter_num,ts_loss,tr_loss = rec
                 f.write( f"{iter_num},{ts_loss},{tr_loss}" + "\n")
+        
+        print( "done!" )
+        self.buff.clear()
     
     def _generate_record( self ):
 
@@ -232,16 +235,19 @@ class train_app:
             "made"  : made
         }
 
-    def _save_model( self , ts_val : float ):
+    def _save_model( self , rec ):
 
-        if ts_val >= self.min_loss:
+        val = max( rec["ts_loss"] , rec["tr_loss"] )
+        if val >= self.min_loss:
             return
         
         print()
         print( "saving model ....." , end = " ")
-        self.min_loss = ts_val
+        self.min_loss = val
         self.i_min_loss = self.iter
-        param = [ x for x in self.model.parameters()]
+
+        model = self.kernel.model
+        param = [ x for x in model.parameters()]
         tc.save(
             param,
             "DATA/model_params.pt"
