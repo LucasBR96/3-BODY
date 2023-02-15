@@ -94,19 +94,20 @@ import matplotlib.pyplot as plt
 #     plt.title( "score over time" )
 #     plt.show()
 
+M = sample( range( 100 ) , 10 )
+K = {
+'data_sets': M,
+'ts_batch_size': 200,
+'tr_batch_size': 200,
+'record_interval': 100,
+'max_time': 10,
+'time_type': 'minutes',
+'buff_lim': 25,
+'lr':1e-3
+}
+
 if __name__ == "__main__":
 
-    M = sample( range( 100 ) , 10 )
-    K = {
-    'data_sets': M,
-    'ts_batch_size': 200,
-    'tr_batch_size': 200,
-    'record_interval': 100,
-    'max_time': 10,
-    'time_type': 'minutes',
-    'buff_lim': 25,
-    'lr':1e-3
-    }
 
     tr = train_app( **K )
     tr.run()
