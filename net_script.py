@@ -3,6 +3,8 @@
 from MODEL.trainer import train_app
 from random import sample
 import matplotlib.pyplot as plt
+import os
+import pandas as pd
 
 # import torch as tc
 # import torch.nn as tnn
@@ -97,8 +99,8 @@ import matplotlib.pyplot as plt
 M = sample( range( 100 ) , 10 )
 K = {
 'data_sets': M,
-'ts_batch_size': 200,
-'tr_batch_size': 200,
+'ts_batch_size': 100,
+'tr_batch_size': 100,
 'record_interval': 100,
 'max_time': 10,
 'time_type': 'minutes',
@@ -106,12 +108,39 @@ K = {
 'lr':1e-3
 }
 
-if __name__ == "__main__":
 
+def crossed_eval( param_name , values ):
 
-    tr = train_app( **K )
-    tr.run()
+    param_dict = K.copy()
+    param_dict[ param_name ] = values[ 0 ]
+    t = train_app( **param_dict )
+    core = t.kernel
+
+    d_list , n = [] , len( values )
+    for i in range( n ):
+
+        try:
+            os.remove("DATA/performance.csv")
+        except FileNotFoundError:
+            pass
+
+        val = values[ i ]
+        if i:
+            core.reset( { param_name : val } )
+        t.run()
+
+        dset = t.load_hist()
+        dmod = dset[ "ts_val" ]
+        new_col = param_name + f"= {val}"
+        dmod.rename( columns = {"ts_val": new_col} )
+
+        d_list.append( dmod )
     
-    df = tr.load_hist()
-    df.plot( title = "test" )
-    plt.show()
+    d_fin = pd.concat( d_list , axis = 1 )
+    d_fin.plot()
+
+if __name__ == "__main__":
+    
+    param_name = "lr"
+    values = [ 1e-3 , 1e-4 , 1e-5 ]
+    crossed_eval( values )
