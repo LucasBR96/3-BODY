@@ -98,13 +98,13 @@ if __name__ == "__main__":
     M = sample( range( 100 ) , 10 )
     K = {
     # 'data_sets': M,
-    'ts_batch_size': 500,
-    'tr_batch_size': 500,
+    'ts_batch_size': 200,
+    'tr_batch_size': 200,
     'record_interval': 100,
-    'max_time': 10,
-    'time_type': 'hours',
+    'max_time': 20,
+    'time_type': 'minutes',
     'buff_lim': 25,
-    'lr':1e-5
+    'lr':1e-4
     }
 
     tr = train_app( **K )

@@ -15,6 +15,7 @@ import torch.nn as tnn
 import torch.functional as tfn
 import torch.optim as top
 import torch.utils.data as tdt
+import pandas as pd
 
 from typing import *
 from random import shuffle
@@ -23,7 +24,63 @@ import os
 
 device = "cuda" if tc.cuda.is_available() else "cpu"
 
-# CK : clock = clock()
+class mod_kern:
+
+    def __init__( self , **kwargs ):
+
+        loss_type = kwargs.get( "loss_fn" , tnn.L1Loss )
+        self.loss_fn = loss_type()
+
+        self.model = stellar_model().to( device )
+        self.starting_params = self.model.state_dict()
+
+        lr = kwargs.get( "lr" , 1e-4 )
+        opm_type = kwargs.get( "opm" , top.Adam )
+        self.opm = opm_type( self.model.parameters() , lr = lr )
+    
+    def update( self , X , y ):
+
+        X = X.to( device )
+        y = y.to( device )
+
+        y_hat = self.model( X )
+        loss = self.loss_fn( y_hat , y )
+
+        self.opm.zero_grad()
+        loss.backward()
+        self.opm.step()
+    
+    def evaluate( self, X_train , y_train , X_test, y_test ):
+
+        tups = [
+            ( X_train , y_train ),
+            ( X_test , y_test )
+        ]
+
+        losses = []
+        with tc.no_grad():
+            for X , y in tups:
+                X = X.to( device )
+                y = y.to( device )
+
+                y_hat = self.model( X )
+                loss = self.loss_fn( y_hat , y ).item()
+                losses.append( loss )
+
+        return losses
+
+    def reset( self , *kwargs ):
+
+        loss_type = kwargs.get( "loss_fn" , tnn.L1Loss )
+        self.loss_fn = loss_type()
+
+        self.model.load_state_dict(
+            self.starting_params
+        )
+
+        lr = kwargs.get( "lr" , 1e-4 )
+        opm_type = kwargs.get( "opm" , top.Adam )
+        self.opm = opm_type( self.model.parameters() , lr = lr )
 
 class train_app:
 
@@ -45,10 +102,7 @@ class train_app:
             sets = data_sets[n:]
         )
 
-        self.loss_fn = tnn.L1Loss()
-        self.model = stellar_model().to( device )
-        lr = kwargs.get( "lr" , 1e-4 )
-        self.opm = top.Adam( self.model.parameters() , lr = lr )
+        self.kernel = mod_kern( **kwargs )
 
         self.iter = 0
         self.record_interval = kwargs.get( "record_interval" , 1000 )
@@ -64,6 +118,12 @@ class train_app:
         max_time = kwargs.get( "max_time" , 12 )
         time_type = kwargs.get( "time_type" , "hours" )
         self.ck = clock( max_time , time_type )
+
+    def load_hist( self ):
+        
+        path = "DATA/performance.csv"
+        df = pd.read_csv( path )
+        return df.set_index( "iter_num" )
 
     def run( self ):
         
@@ -104,28 +164,30 @@ class train_app:
 
     def _print_rec( self , rec ):
 
-        iter_num , ts_val , tr_val , y , y_hat = rec
-
-        print( f"iter #{iter_num} " + "-"*25 )
+        it = rec["iter_num"]
+        print( f"iter #{it} " + "-"*25 )
         print( "time_passed: " + str( self.ck ) )
         print()
 
         print("losses:")
+        tr_val = rec["tr_loss"]
         print(f" at training: {tr_val:.5f}")
+        ts_val = rec["ts_loss"]
         print(f" at testing: {ts_val:.5f}")
         if self.iter:
             print(f" best: {self.min_loss:5f}")
         print()
 
-        s_target = " ".join( f"{x:.5f}" for x in y )
-        print( "target | " + s_target )
-        s_made = " ".join( f"{x:.5f}" for x in y_hat )
-        print( "made   | " + s_made )
+        print( "target | " + rec["target"] )
+        print( "made   | " + rec["made"] )
         print()         
 
     def _push_rec( self , rec ):
 
-        iter_num , ts_val , tr_val , _ , _ = rec 
+        iter_num = rec[ "iter_num" ]
+        tr_val = rec[ "tr_val" ]
+        ts_val = rec[ "ts_val" ]
+
         self.buff.append(
             ( iter_num, 
             ts_val,
@@ -145,39 +207,30 @@ class train_app:
                 )
             for rec in self.buff:
                 iter_num,ts_loss,tr_loss = rec
-                f.write(
-                    f"{iter_num},{ts_loss},{tr_loss}" + "\n"
-                )
-        self.buff.clear() 
-        print( "done!\n" )
-
+                f.write( f"{iter_num},{ts_loss},{tr_loss}" + "\n")
+    
     def _generate_record( self ):
+
+        X_train , y_train = self.train_data.fetch_data()
+        X_test , y_test   = self.test_data.fetch_data()
+        tr_loss , ts_loss = self.kernel.evaluate( X_train , y_train , X_test , y_test )
 
         with tc.no_grad():
 
-            X , y = self.train_data.fetch_data()
-            X = X.to( device )
-            y_tr = y.to( device )
+            X = X_train[ 0 ].to( device )
+            y = y_train[ 0 ].to( device )
+            y_hat = self.kernel.model( X )
 
-            y_hat_tr = self.model( X )
-            tr_val = self.loss_fn( y_hat_tr , y_tr ).item()
-            tr_val = self.train_rec( tr_val )
+            target = " ".join( f"{x:.5f}".ljust( 7 ) for x in y )
+            made = " ".join( f"{x:.5f}".ljust( 7 ) for x in y_hat )
 
-            X , y = self.test_data.fetch_data()
-            X = X.to( device )
-            y = y.to( device )
-
-            y_hat = self.model( X )
-            ts_val = self.loss_fn( y_hat , y ).item()
-            ts_val = self.test_rec( ts_val )
-
-            return (
-                self.iter,
-                ts_val,
-                tr_val,
-                y_tr[ 0 ],
-                y_hat_tr[ 0 ]
-            )
+        return {
+            "iter_num":self.iter,
+            "tr_loss":tr_loss,
+            "ts_loss":ts_loss,
+            "target": target,
+            "made"  : made
+        }
 
     def _save_model( self , ts_val : float ):
 
@@ -194,20 +247,12 @@ class train_app:
             "DATA/model_params.pt"
         )
         print( "done!\n" )
-        
+
     # @CK.tick()
     def _update_net( self ):
 
         X , y = self.train_data.fetch_data()
-        X = X.to( device )
-        y = y.to( device )
-
-        y_hat = self.model( X )
-        loss = self.loss_fn( y_hat , y )
-
-        self.opm.zero_grad()
-        loss.backward()
-        self.opm.step()
+        self.kernel.update( X , y )
 
 if __name__ == "__main__":
 
