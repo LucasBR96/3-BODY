@@ -101,8 +101,8 @@ K = {
 'data_sets': M,
 'ts_batch_size': 100,
 'tr_batch_size': 100,
-'record_interval': 100,
-'max_time': 10,
+'record_interval': 10,
+'max_time': 5,
 'time_type': 'minutes',
 'buff_lim': 25,
 'lr':1e-3
@@ -114,7 +114,10 @@ def crossed_eval( param_name , values ):
     param_dict = K.copy()
     param_dict[ param_name ] = values[ 0 ]
     t = train_app( **param_dict )
+
     core = t.kernel
+    test_buff = t.test_rec
+    train_buff = t.train_rec
 
     d_list , n = [] , len( values )
     for i in range( n ):
@@ -126,21 +129,25 @@ def crossed_eval( param_name , values ):
 
         val = values[ i ]
         if i:
-            core.reset( { param_name : val } )
+            core.reset( **{ param_name : val } )
+            test_buff.clear()
+            train_buff.clear()
+            
         t.run()
 
         dset = t.load_hist()
-        dmod = dset[ "ts_val" ]
-        new_col = param_name + f"= {val}"
-        dmod.rename( columns = {"ts_val": new_col} )
+        dmod = dset[ "ts_loss" ]
+        new_col = param_name + f" = {val}"
+        dmod.rename( new_col )
 
         d_list.append( dmod )
     
     d_fin = pd.concat( d_list , axis = 1 )
     d_fin.plot()
+    plt.show()
 
 if __name__ == "__main__":
     
     param_name = "lr"
     values = [ 1e-3 , 1e-4 , 1e-5 ]
-    crossed_eval( values )
+    crossed_eval( param_name , values )

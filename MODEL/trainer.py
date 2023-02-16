@@ -69,7 +69,7 @@ class mod_kern:
 
         return losses
 
-    def reset( self , *kwargs ):
+    def reset( self , **kwargs ):
 
         loss_type = kwargs.get( "loss_fn" , tnn.L1Loss )
         self.loss_fn = loss_type()
@@ -131,9 +131,19 @@ class train_app:
         def update():
             self._update_net()
         
-        while not self.ck.is_done():
+        while True:
 
-            if self.iter%self.record_interval == 0:
+            A = self.ck.is_done()
+            B = self.iter%self.record_interval == 0
+            C = len( self.buff ) >= self.buff_lim
+
+            #------------------------------------------------
+            # If time is up or the buffer is full,
+            # save its contents on a csv file
+            if A or C:
+                self._save_buff()
+            
+            if B:
 
                 #---------------------------------------
                 # Comparative performance of the network
@@ -143,24 +153,24 @@ class train_app:
                 #----------------------------------------
                 # printing the result of the last function
                 # on screen
-                self._print_rec( rec )
+                # self._print_rec( rec )
 
                 #-----------------------------------------
-                # saving the last record on a buffer. and if
-                # the buffer is full, save it on a csv file
+                # saving the last record on a buffer. 
                 self._push_rec( rec )
-                if len( self.buff ) >= self.buff_lim:
-                    self._save_buff()
 
                 #------------------------------------------
                 # saving the model, if the performance on the
                 # test data set has improoved
                 self._save_model( rec )
             
-            #------------------------------------------
-            # Doing one iteration of the backprop algorithm
-            update()
-            self.iter += 1
+            if not A:
+                #------------------------------------------
+                # Doing one iteration of the backprop algorithm
+                update()
+                self.iter += 1
+            else:
+                break
 
     def _print_rec( self , rec ):
 
@@ -216,8 +226,11 @@ class train_app:
 
         X_train , y_train = self.train_data.fetch_data()
         X_test , y_test   = self.test_data.fetch_data()
+        
         tr_loss , ts_loss = self.kernel.evaluate( X_train , y_train , X_test , y_test )
-
+        tr_loss = self.train_rec( tr_loss )
+        ts_loss = self.test_rec( ts_loss )
+        
         with tc.no_grad():
 
             X = X_train[ 0 ].to( device )

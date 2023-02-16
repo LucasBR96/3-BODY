@@ -22,6 +22,9 @@ class mob_mean_gen:
             self.mean += ( val - bottom )/n
         
         return self.mean
+    
+    def clear( self ):
+        self.buff.clear()
 
 if __name__ == "__main__":
 
