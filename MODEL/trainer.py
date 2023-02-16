@@ -90,6 +90,8 @@ class train_app:
         shuffle( data_sets )
         n = int( .8*len( data_sets ) )
 
+        self.verbose = kwargs.get( "verbose" , True )
+
         tr_batch_size = kwargs.get('tr_batch_size' , 500 )
         self.train_data = sampler(
             batch_size = tr_batch_size,
@@ -153,7 +155,8 @@ class train_app:
                 #----------------------------------------
                 # printing the result of the last function
                 # on screen
-                # self._print_rec( rec )
+                if self.verbose:
+                    self._print_rec( rec )
 
                 #-----------------------------------------
                 # saving the last record on a buffer. 
@@ -206,8 +209,9 @@ class train_app:
 
     def _save_buff( self ):
 
-        print()
-        print( "saving buffer ....." , end = " ")
+        if self.verbose:
+            print()
+            print( "saving buffer ....." , end = " ")
 
         path = "DATA/performance.csv"
         with open( path , "a" ) as f:
@@ -219,7 +223,9 @@ class train_app:
                 iter_num,ts_loss,tr_loss = rec
                 f.write( f"{iter_num},{ts_loss},{tr_loss}" + "\n")
         
-        print( "done!" )
+        if self.verbose:
+            print( "done!" )
+
         self.buff.clear()
     
     def _generate_record( self ):
@@ -254,8 +260,10 @@ class train_app:
         if val >= self.min_loss:
             return
         
-        print()
-        print( "saving model ....." , end = " ")
+        if self.verbose:
+            print()
+            print( "saving model ....." , end = " ")
+
         self.min_loss = val
         self.i_min_loss = self.iter
 
@@ -265,7 +273,10 @@ class train_app:
             param,
             "DATA/model_params.pt"
         )
-        print( "done!\n" )
+
+        if self.verbose:
+            print( "done!\n" )
+            
 
     # @CK.tick()
     def _update_net( self ):
