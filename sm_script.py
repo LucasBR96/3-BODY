@@ -4,10 +4,9 @@ import SIMULATION.synthesis as sy
 if __name__ == "__main__":
 
     h_step = 1e-3
-    total_time = 60.
-    r_step = 2*1e-2
+    total_time = 120.
 
-    for i in range( 100 ):
+    for i in range( 10 ):
         
         Sm = sm.simmu(
             h_step = h_step,
@@ -17,6 +16,5 @@ if __name__ == "__main__":
         sy.simulate(
             i,
             Sm = Sm,
-            step_size = r_step,
             verbose = False 
         )

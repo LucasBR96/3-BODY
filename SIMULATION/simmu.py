@@ -56,7 +56,7 @@ class simmu:
     MAX_GRAN = 1e-1
 
     MIN_ITER = 1
-    MAX_ITER = 100
+    MAX_ITER = 10**3
 
     RADIUS = 0.1
     MIN_DIST = ( 2*RADIUS )**( 2 )
