@@ -14,7 +14,7 @@ except ModuleNotFoundError:
     from SIMULATION.simmu import simmu
 
 # CONSTANTS ----------------------------------------------------------
-SIMU_HEAD = "iter_num,bod_id,x,y,vx,vy\n"
+SIMU_HEAD = "iter_num,x_0,y_0,vx_0,vy_0,x_1,y_1,vx_1,vy_1,x_2,y_2,vx_2,vy_2\n"
 META_HEAD = "bod_id,mu_x,std_x,mu_y,std_y,mu_vx,std_vx,mu_vy,std_vy\n"
 
 def print_iter( tup ):
@@ -32,11 +32,15 @@ def print_iter( tup ):
 
 def record_iteration( simulation_id, tup ):
 
-    fl = open( f"DATA/simu/simulacao_{simulation_id}.csv" , mode = "a" )
     iter_num , pos , vel = tup
+    s = f"{iter_num}"
     for i in range( 3 ):
-        s = f"{iter_num:.5f},{i},{pos[i,0]},{pos[i,1]},{vel[i,0]},{vel[i,1]}\n"
-        fl.write(s)
+        s += f",{pos[i,0]},{pos[i,1]},{vel[i,0]},{vel[i,1]}"
+        if i == 2:
+            s += "\n"
+    
+    fl = open( f"DATA/simu/simulacao_{simulation_id}.csv" , mode = "a" )
+    fl.write(s)
     fl.close()
 
     # print( s )
