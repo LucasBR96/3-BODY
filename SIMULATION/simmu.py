@@ -69,8 +69,8 @@ class simmu:
 
     VEL_0 = np.zeros( ( 3 , 2 ) )
 
-    def __init__( self , h_step = .02 , run_time = 10.
-    , adaptative = False , manual_setting = False ,
+    def __init__( self , h_step = .02, r_step = .25 , run_time = 10.
+    , adaptative = True , manual_setting = False ,
     pos_0 = None , vel_0 = None ):
         
         #----------------------------------------------
@@ -81,6 +81,10 @@ class simmu:
             simmu.MAX_GRAN
         )
         self.t2 = .5*( self.t1**2 )
+
+        #---------------------------------------------
+        # recording step size
+        self.r_step = r_step
 
         #------------------------------------------------
         # adptation settings
@@ -128,20 +132,14 @@ class simmu:
         # basic gravitational equations and iterate
         # using the rung kutta method.
         elif self.curr_time < self.run_time:
-
-            acc = self.get_acc()
-            if self.adaptative:
-                self.update_tstep( acc )
-            
-            self.pos += self.vel*self.t1 + acc*self.t2
-            self.vel += acc*self.t1
+            self._update_system()
             
         tup = (
             self.curr_time,
             self.pos.copy(),
             self.vel.copy()
         )
-        self.curr_time += self.t1
+        self.curr_time += self.r_step
         
         return tup
 
@@ -177,6 +175,21 @@ class simmu:
         self.vel[ :2 , 1 ] = np.sin( theta )
         self.vel[ 2 ] = -( self.vel[ 1 ] + self.vel[ 0 ] )
     
+    def _update_system( self ):
+
+        base = 0
+        while base < self.r_step:
+
+            acc = self.get_acc()
+            if self.adaptative:
+                t_left = self.r_step - base
+                self.update_tstep( acc , t_left )
+
+            self.pos += self.vel*self.t1 + acc*self.t2
+            self.vel += acc*self.t1
+
+            base += self.t1
+
     def get_acc( self ):
 
         xs : np.ndarray = self.pos[ : , 0 ]

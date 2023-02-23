@@ -1,4 +1,4 @@
 *.swp
 *.planner
-
+*.csv
 */__pycache__
