@@ -46,69 +46,55 @@ class stellarDset( Dataset ):
 
         self.set_num = set_num
         try:
-            data = pd.read_csv(
+            self.data = pd.read_csv(
                 f"DATA/simu/simulacao_{set_num}.csv"
             )
         except FileNotFoundError:
             print( f"There is no such simulation with index {set_num}")
             return
-        
-        dfs = []
-        for i in range( 3 ):
-            bod : pd.DataFrame = data.loc[ data[ "bod_id" ] == i ][ [ "iter_num" , "x" , "y" , "vx" , "vy" ] ]
-            bod = bod.rename( columns = {
-                "x":f"x_{i}",
-                "y":f"y_{i}",
-                "vx":f"vx_{i}",
-                "vy":f"vy_{i}"
-            })
-
-            bod.set_index(
-                np.arange( len( bod ) ),
-                inplace = True 
-            )
-            
-            dfs.append( bod )
-        self.data = pd.concat( dfs , axis = 1 )
 
         n = len( self.data )
-        self.n = ( n - 1 )*n//2
+        self.n = n - 1
         
     def __len__( self ):
         return self.n
     
     def __getitem__(self, index ):
         
-        n = len( self.data )
+        r1 = self.data.iloc[ index ].to_dict()
+        r2 = self.data.iloc[ index ].to_dict()
 
-        i1 = get_i1( n , index )
-        r1 = self.data.iloc[ i1 ].to_dict()
-
-        i2 = get_i2( n , index , i1 )
-        r2 = self.data.iloc[ i2 ].to_dict()
-
-        X = tc.zeros( 13 )
-        X[ 0 ] = r2[ "iter_num" ] - r1[ "iter_num" ]
-        X[ 1 ] = r1["x_0"]
-        X[ 2 ] = r1["y_0"]
-        X[ 3 ] = r1[ "vx_0" ]
-        X[ 4 ] = r1[ "vy_0" ]
-        X[ 5 ] = r1[ "x_1" ]
-        X[ 6 ] = r1[ "y_1" ]
-        X[ 7 ] = r1[ "vx_1" ]
-        X[ 8 ] = r1[ "vy_1" ]
-        X[ 9 ] = r1[ "x_2" ]
-        X[ 10 ] = r1[ "y_2" ]
-        X[ 11 ] = r1[ "vx_2" ]
-        X[ 12 ] = r1[ "vy_2" ]
+        X = tc.zeros( 12 )
+        X[ 0 ] = r1["x_0"]
+        X[ 1 ] = r1["y_0"]
+        X[ 2 ] = r1[ "vx_0" ]
+        X[ 3 ] = r1[ "vy_0" ]
+        X[ 4 ] = r1[ "x_1" ]
+        X[ 5 ] = r1[ "y_1" ]
+        X[ 6 ] = r1[ "vx_1" ]
+        X[ 7 ] = r1[ "vy_1" ]
+        X[ 8 ] = r1[ "x_2" ]
+        X[ 9 ] = r1[ "y_2" ]
+        X[ 10 ] = r1[ "vx_2" ]
+        X[ 11 ] = r1[ "vy_2" ]
         
-        y = tc.zeros( 6 )
-        y[ 0 ] = r2[ "x_0" ]
-        y[ 1 ] = r2[ "y_0" ]
-        y[ 2 ] = r2[ "x_1" ]
-        y[ 3 ] = r2[ "y_1" ]
-        y[ 4 ] = r2[ "x_2" ]
-        y[ 5 ] = r2[ "y_2" ]
+        pos = tc.zeros( 6 )
+        pos[ 0 ] = r2[ "x_0" ]
+        pos[ 1 ] = r2[ "y_0" ]
+        pos[ 2 ] = r2[ "x_1" ]
+        pos[ 3 ] = r2[ "y_1" ]
+        pos[ 4 ] = r2[ "x_2" ]
+        pos[ 5 ] = r2[ "y_2" ]
+
+        vel = tc.zeros( 6 )
+        vel[ 0 ] = r2[ "vx_0" ]
+        vel[ 1 ] = r2[ "vy_0" ]
+        vel[ 2 ] = r2[ "vx_1" ]
+        vel[ 3 ] = r2[ "vy_1" ]
+        vel[ 4 ] = r2[ "vx_2" ]
+        vel[ 5 ] = r2[ "vy_2" ]
+
+        return X , pos , vel
 
         return X , y 
 
