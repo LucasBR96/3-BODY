@@ -222,11 +222,12 @@ class simmu:
         acc[ : , 1 ] = ay.sum( axis = 1 )
         return acc
     
-    def update_tstep( self , acc ):
+    def update_tstep( self , acc , t_left ):
         
         acc_squared = ( acc**2 ).sum( axis = 1 )
         acc_mod     = np.sqrt( acc_squared )
         max_acc     = acc_mod.max()
         
-        self.t1 = self.t_adpt( max_acc )
+        t1 = min( self.t_adpt( max_acc ) , t_left )
+        self.t1 = t1
         self.t2 = .5*( self.t1**2 )
