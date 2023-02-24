@@ -88,18 +88,14 @@ class train_app:
 
         self._init_data( **kwargs )
 
-        self.kernel = mod_kern( **kwargs )
+        self._init_recorder( **kwargs )
 
-        self.iter = 0
-        self.record_interval = kwargs.get( "record_interval" , 1000 )
-        self.test_rec = mob_mean_gen( 25 )
-        self.train_rec = mob_mean_gen( 25 )
+        self._init_clock( **kwargs )
+        
+        self.kernel = mod_kern( **kwargs )
 
         self.min_loss = sys.maxsize
         self.i_min_loss = None
-
-        self.buff = []
-        self.buff_lim = kwargs.get( "buff_lim" , 100 )
 
         max_time = kwargs.get( "max_time" , 12 )
         time_type = kwargs.get( "time_type" , "hours" )
@@ -112,7 +108,9 @@ class train_app:
         data_sets = kwargs.get( "data_sets" , list( range( 5*( 10**3 ) ) ) )
         shuffle( data_sets )
         n = int( .8*len( data_sets ) )
-
+        
+        #-------------------------------------------------------------------
+        # Giving to training
         train_data = stellarDset( sets = data_sets[ :n ] )
         tr_batch_size = kwargs.get('tr_batch_size' , 500 )
         self.train_data = tdt.DataLoader(
@@ -121,6 +119,8 @@ class train_app:
             True
         )
 
+        #-------------------------------------------------------------------
+        # Giving to testing
         test_data = stellarDset( sets = data_sets[ :n ] )
         ts_batch_size = kwargs.get('ts_batch_size' , 500 )
         self.test_data = tdt.DataLoader(
@@ -128,6 +128,27 @@ class train_app:
             ts_batch_size,
             True
         )
+
+    def _init_recorder( self , **kwargs ):
+
+        #------------------------------------------------------------
+        # If the evolution of the neural network must be saved 
+        # to a csv file or printed
+        self.to_save = kwargs.get( "to_save" , True )
+        self.verbose = kwargs.get( "verbose" , True )
+
+        #-----------------------------------------------------------
+        # How much iterations between evaluations, evolution is printed
+        # through a mobile mean of the costs
+        self.record_interval = kwargs.get( "record_interval" , 1000 )
+        mov_avg = kwargs.get( "mov_avg" , 25 )
+        self.test_rec = mob_mean_gen( mov_avg )   # To smooth the training curve
+        self.train_rec = mob_mean_gen( mov_avg )  # idem
+
+        #-------------------------------------------------------
+        # where the evolution will be saved
+        self.buff = []
+        self.buff_lim = kwargs.get( "buff_lim" , 100 )
 
     def load_hist( self ):
         
