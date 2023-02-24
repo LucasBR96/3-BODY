@@ -1,11 +1,11 @@
 try:
-    from dsamp import sampler , stellarDset
+    from dsamp import stellarDset
     from network_model import stellar_model
     from clock import clock
     from mov_avg import mob_mean_gen
 
 except ModuleNotFoundError:
-    from MODEL.dsamp import sampler , stellarDset
+    from MODEL.dsamp import stellarDset
     from MODEL.network_model import stellar_model
     from MODEL.clock import clock
     from MODEL.mov_avg import mob_mean_gen
@@ -86,23 +86,7 @@ class train_app:
 
     def __init__( self , **kwargs ):
 
-        data_sets = kwargs.get( "data_sets" , list( range( 100 ) ) )
-        shuffle( data_sets )
-        n = int( .8*len( data_sets ) )
-
-        self.verbose = kwargs.get( "verbose" , True )
-
-        tr_batch_size = kwargs.get('tr_batch_size' , 500 )
-        self.train_data = sampler(
-            batch_size = tr_batch_size,
-            sets = data_sets[:n]
-        )
-
-        ts_batch_size = kwargs.get('ts_batch_size' , 500 )
-        self.test_data = sampler(
-            batch_size = ts_batch_size,
-            sets = data_sets[n:]
-        )
+        self._init_data( **kwargs )
 
         self.kernel = mod_kern( **kwargs )
 
@@ -120,6 +104,30 @@ class train_app:
         max_time = kwargs.get( "max_time" , 12 )
         time_type = kwargs.get( "time_type" , "hours" )
         self.ck = clock( max_time , time_type )
+
+    def _init_data( self , **kwargs ):
+
+        #-------------------------------------------------------------------
+        # Defining the simulations
+        data_sets = kwargs.get( "data_sets" , list( range( 5*( 10**3 ) ) ) )
+        shuffle( data_sets )
+        n = int( .8*len( data_sets ) )
+
+        train_data = stellarDset( sets = data_sets[ :n ] )
+        tr_batch_size = kwargs.get('tr_batch_size' , 500 )
+        self.train_data = tdt.DataLoader(
+            train_data,
+            tr_batch_size,
+            True
+        )
+
+        test_data = stellarDset( sets = data_sets[ :n ] )
+        ts_batch_size = kwargs.get('ts_batch_size' , 500 )
+        self.test_data = tdt.DataLoader(
+            test_data,
+            ts_batch_size,
+            True
+        )
 
     def load_hist( self ):
         

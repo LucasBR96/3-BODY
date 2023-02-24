@@ -10,7 +10,7 @@ from typing import *
 lru_cache( 10**5 )
 def get_tup( simu , index ):
 
-    data = pd.read_csv(f"DATA/simu/simulacao_{simu}")
+    data = pd.read_csv(f"DATA/simu/simulacao_{simu}.csv")
     r1 = data.iloc[ index ].to_dict()
     r2 = data.iloc[ index + 1 ].to_dict()
 
@@ -56,7 +56,7 @@ def get_dpoint( sizes , index  ):
     # s_i   : 0 1 2 0 1 0 1 2 3
 
     s_arr = sizes[ sizes <= index ]
-    simmu = sizes[ len( s_arr ) ]
+    simmu = len( s_arr )
     if simmu:
         index -= s_arr[ -1 ]
     return simmu , index
@@ -71,9 +71,9 @@ class stellarDset( Dataset ):
 
         try:
             meta : pd.DataFrame = pd.read_csv(
-                f"DATA/simu/meta.csv"
+                f"DATA/meta.csv"
             )
-            meta.set_index( "simmu_id" , inplace = True )
+            meta.set_index( "simu_id" , inplace = True )
         except FileNotFoundError:
             print( f"meta simulation file not found")
             return
@@ -81,7 +81,7 @@ class stellarDset( Dataset ):
         sizes : np.ndarray = ( meta.iloc[ self.sets ] )[ "size" ].to_numpy()
         self.sizes = ( sizes - 1 ).cumsum()
 
-        self.n = sizes[ -1 ]
+        self.n = self.sizes[ -1 ]
         
     def __len__( self ):
         return self.n
@@ -95,7 +95,7 @@ class stellarDset( Dataset ):
 if __name__ == "__main__":
 
     L = list( range( 5 ) )
-    D = DataLoader( stellarDset( L ), batch_size = 10 )
+    D = DataLoader( stellarDset( L ), batch_size = 10 , shuffle = True )
     X , pos , vel = next( iter( D ) )
 
     print( *X , sep = "\n" )
