@@ -42,18 +42,41 @@ def record_iteration( simulation_id, tup ):
 
     # print( s )
 
+def record_meta( simulation_id , base_time , size , run_time ):
+
+    try: 
+        fl = open( "DATA/meta.csv" )
+        fl.close()
+    except FileNotFoundError:
+        fl = open( "DATA/meta.csv" , "a" )
+        fl.write( "simu_id,base_time,size,run_time\n" )
+        fl.close()
+
+    fl = open( "DATA/meta.csv" , "a" )
+    fl.write( f"{simulation_id},{base_time},{size},{run_time}\n")
+    fl.close()
+
 def simulate( simulation_id , verbose = False , Sm = None ):
     
     fl = open( f"DATA/simu/simulacao_{simulation_id}.csv" , mode = "a" )
     fl.write( SIMU_HEAD )
     fl.close()
 
+    base_time = 0
+    count = 0
+
     if Sm is None:
         Sm = simmu()
 
     while Sm.curr_time < Sm.run_time:
 
+        t = tm.time()
         tup = Sm()
+        base_time += tm.time() - t
+        count += 1
+
         record_iteration( simulation_id , tup )
         if verbose:
             print_iter( tup )
+
+    record_meta( simulation_id , base_time , count , Sm.run_time )
