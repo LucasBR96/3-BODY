@@ -50,24 +50,16 @@ class mod_kern:
         loss.backward()
         self.opm.step()
     
-    def evaluate( self, X_train , y_train , X_test, y_test ):
+    def evaluate( self, X , y ):
 
-        tups = [
-            ( X_train , y_train ),
-            ( X_test , y_test )
-        ]
-
-        losses = []
         with tc.no_grad():
-            for X , y in tups:
-                X = X.to( device )
-                y = y.to( device )
+            X = X.to( device )
+            y = y.to( device )
 
-                y_hat = self.model( X )
-                loss = self.loss_fn( y_hat , y ).item()
-                losses.append( loss )
+            y_hat = self.model( X )
+            loss = self.loss_fn( y_hat , y ).item()
 
-        return losses
+        return loss
 
     def reset( self , **kwargs ):
 
@@ -91,15 +83,13 @@ class train_app:
         self._init_recorder( **kwargs )
 
         self._init_clock( **kwargs )
-        
-        self.kernel = mod_kern( **kwargs )
 
+        self.pos_kernel = mod_kern( **kwargs )
+        self.vel_kernel = mod_kern( **kwargs )
+
+        self.iter = 0
         self.min_loss = sys.maxsize
         self.i_min_loss = None
-
-        max_time = kwargs.get( "max_time" , 12 )
-        time_type = kwargs.get( "time_type" , "hours" )
-        self.ck = clock( max_time , time_type )
 
     def _init_data( self , **kwargs ):
 
@@ -113,21 +103,21 @@ class train_app:
         # Giving to training
         train_data = stellarDset( sets = data_sets[ :n ] )
         tr_batch_size = kwargs.get('tr_batch_size' , 500 )
-        self.train_data = tdt.DataLoader(
+        self.train_data = iter( tdt.DataLoader(
             train_data,
             tr_batch_size,
             True
-        )
+        ) )
 
         #-------------------------------------------------------------------
         # Giving to testing
         test_data = stellarDset( sets = data_sets[ :n ] )
         ts_batch_size = kwargs.get('ts_batch_size' , 500 )
-        self.test_data = tdt.DataLoader(
+        self.test_data = iter( tdt.DataLoader(
             test_data,
             ts_batch_size,
             True
-        )
+        ) )
 
     def _init_recorder( self , **kwargs ):
 
@@ -150,6 +140,12 @@ class train_app:
         self.buff = []
         self.buff_lim = kwargs.get( "buff_lim" , 100 )
 
+    def _init_clock( self , **kwargs ):
+
+        max_time = kwargs.get( "max_time" , 12 )
+        time_type = kwargs.get( "time_type" , "hours" )
+        self.ck = clock( max_time , time_type )
+
     def load_hist( self ):
         
         path = "DATA/performance.csv"
@@ -171,7 +167,7 @@ class train_app:
             #------------------------------------------------
             # If time is up or the buffer is full,
             # save its contents on a csv file
-            if A or C:
+            if ( A or C ) and self.to_save:
                 self._save_buff()
             
             if B:
@@ -188,8 +184,9 @@ class train_app:
                     self._print_rec( rec )
 
                 #-----------------------------------------
-                # saving the last record on a buffer. 
-                self._push_rec( rec )
+                # saving the last record on a buffer.
+                if self.to_save: 
+                    self._push_rec( rec )
 
                 #------------------------------------------
                 # saving the model, if the performance on the
@@ -220,8 +217,14 @@ class train_app:
             print(f" best: {self.min_loss:5f}")
         print()
 
-        print( "target | " + rec["target"] )
-        print( "made   | " + rec["made"] )
+        print( "position:")
+        print( " target | " + rec["p_target"] )
+        print( " made   | " + rec["p_made"] )
+        print()
+
+        print( "velocity:")
+        print( " target | " + rec["v_target"] )
+        print( " made   | " + rec["v_made"] )
         print()         
 
     def _push_rec( self , rec ):
@@ -259,29 +262,37 @@ class train_app:
     
     def _generate_record( self ):
 
-        X_train , y_train = self.train_data.fetch_data()
-        X_test , y_test   = self.test_data.fetch_data()
-        
-        tr_loss , ts_loss = self.kernel.evaluate( X_train , y_train , X_test , y_test )
-        tr_loss = self.train_rec( tr_loss )
-        ts_loss = self.test_rec( ts_loss )
-        
-        with tc.no_grad():
+        record = {}
+        record[ "iter_num" ] = self.iter
 
-            X = X_train[ 0 ].to( device )
-            y = y_train[ 0 ].to( device )
-            y_hat = self.kernel.model( X )
+        for dl in [ "tr" , "ts" ]:
 
-            target = " ".join( f"{x:.5f}".ljust( 7 ) for x in y )
-            made = " ".join( f"{x:.5f}".ljust( 7 ) for x in y_hat )
+            if dl == "tr":
+                dset = self.train_data
+            else:
+                dset = self.test_data
+            
+            X , pos , vel = next( dset )
+            p_loss = self.pos_kernel.evaluate( X , pos )
+            v_loss = self.vel_kernel.evaluate( X , vel )
+            record[ dl + "_loss" ] = .5*( p_loss + v_loss )
 
-        return {
-            "iter_num":self.iter,
-            "tr_loss":tr_loss,
-            "ts_loss":ts_loss,
-            "target": target,
-            "made"  : made
-        }
+            if dl == "tr":
+                with tc.no_grad():
+                
+                    X0 = X[ 0 ].to( device )
+
+                    p0 = pos[ 0 ].to( device )
+                    p_hat = self.pos_kernel.model( X0 )
+                    record["p_target" ] = " ".join( f"{x:.5f}".ljust( 7 ) for x in p0 )
+                    record["p_made" ] = " ".join( f"{x:.5f}".ljust( 7 ) for x in p_hat )
+
+                    v0 = vel[ 0 ].to( device )
+                    v_hat = self.vel_kernel.model( X0 )
+                    record["v_target" ] = " ".join( f"{x:.5f}".ljust( 7 ) for x in v0 )
+                    record["v_made" ] = " ".join( f"{x:.5f}".ljust( 7 ) for x in v_hat )
+
+        return record
 
     def _save_model( self , rec ):
 
@@ -296,42 +307,39 @@ class train_app:
         self.min_loss = val
         self.i_min_loss = self.iter
 
-        model = self.kernel.model
-        param = [ x for x in model.parameters()]
-        tc.save(
-            param,
-            "DATA/model_params.pt"
-        )
+        tups = [
+            ( self.pos_kernel.model , "pos" ),
+            ( self.vel_kernel.model , "vel" )
+        ]
+        for model , name in tups:
+            param = [ x for x in model.parameters()]
+            tc.save(
+                param,
+                f"DATA/{name}_model_params.pt"
+            )
 
         if self.verbose:
             print( "done!\n" )
-            
 
     # @CK.tick()
     def _update_net( self ):
 
-        X , y = self.train_data.fetch_data()
-        self.kernel.update( X , y )
+        X , pos , vel = next( self.train_data )
+        self.pos_kernel.update( X , pos )
+        self.vel_kernel.update( X , vel )
 
 if __name__ == "__main__":
 
     from time import sleep
 
-    t = train_app()
-    @t.ck.tick()
-    def update():
-        t._update_net()
+    t = train_app(
+        data_sets = list( range( 10 ) ),
+        tr_batch_size = 20,
+        ts_batch_size = 20,
+        lr = 1e-4,
+        record_interval = 20,
+        max_time = 10,
+        time_type = "minutes"
+    )
 
-    cm = clock()
-    @cm.tick()
-    def boo( ):
-        update()
-        sleep( .01 )
-
-    print( "tempo em ck | tempo em cm" )
-    for _ in range( 10 ):
-        boo()
-        # t._update_net()
-        s1 = f"{ t.ck.base:.5f}".rjust( 11 )
-        s2 = f"{ cm.base:.5f}".rjust( 11 )
-        print( s1 + " | " + s2 )
+    t.run()

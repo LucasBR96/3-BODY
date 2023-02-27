@@ -24,7 +24,7 @@ class stellar_model( tnn.Module ):
     def __init__( self ):
         super().__init__()
 
-        self.head = perceptron( 13 )
+        self.head = perceptron( 12 )
         self.body = tnn.Sequential(
             *[ perceptron() for _ in range( NUM_LAY ) ]
         )
