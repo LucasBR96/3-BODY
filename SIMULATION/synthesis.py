@@ -56,7 +56,7 @@ def record_meta( simulation_id , base_time , size , run_time ):
         fl.close()
 
     fl = open( "DATA/meta.csv" , "a" )
-    fl.write( f"{simulation_id},{base_time},{size},{run_time}\n")
+    fl.write( f"\n{simulation_id},{base_time},{size},{run_time}")
     fl.close()
 
 def simulate( simulation_id , verbose = False , Sm = None ):

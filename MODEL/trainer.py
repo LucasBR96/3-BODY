@@ -333,13 +333,14 @@ if __name__ == "__main__":
     from time import sleep
 
     t = train_app(
-        data_sets = list( range( 10 ) ),
-        tr_batch_size = 20,
-        ts_batch_size = 20,
+        data_sets = list( range( 350 ) ),
+        tr_batch_size = 500,
+        ts_batch_size = 500,
         lr = 1e-4,
-        record_interval = 20,
-        max_time = 10,
-        time_type = "minutes"
+        record_interval = 25,
+        # max_time = 1,
+        # time_type = "hours",
+        buff_lim = 25
     )
 
     t.run()

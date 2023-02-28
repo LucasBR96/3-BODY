@@ -3,7 +3,7 @@ import torch.utils as ut
 import torch.nn as tnn
 
 NUM_LAY = 10
-LAY_SIZE = 256
+LAY_SIZE = 512
 
 class perceptron( tnn.Module ):
 

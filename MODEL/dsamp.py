@@ -63,11 +63,11 @@ def get_dpoint( sizes , index  ):
 
 class stellarDset( Dataset ):
 
-    def __init__( self , sets : List[ int ] ):
+    def __init__( self , sets : List[ int ] , repeats = 10**3 ):
 
         # super( self ).__init__(  )
         self.sets = sets
-        self.data_dict : Dict[ int , Tuple ] = {}
+        self.repeats = max( repeats , 1 )
 
         try:
             meta : pd.DataFrame = pd.read_csv(
@@ -84,10 +84,12 @@ class stellarDset( Dataset ):
         self.n = self.sizes[ -1 ]
         
     def __len__( self ):
-        return self.n
+        return self.n*self.repeats
     
     def __getitem__(self, index ):
         
+        index = index%self.n
+
         simu , index = get_dpoint( self.sizes , index )
         simu = self.sets[ simu ]
         return get_tup( simu , index )
