@@ -16,27 +16,43 @@ import torch.functional as tfn
 import torch.optim as top
 import torch.utils.data as tdt
 import pandas as pd
+import matplotlib.pyplot as plt
 
 from typing import *
 from random import shuffle
 import sys
 import os
+import pickle as pck
 
 device = "cuda" if tc.cuda.is_available() else "cpu"
 
 class mod_kern:
 
+    losses = {
+        "MAE" : tnn.L1Loss,
+        "MSE" : tnn.MSELoss
+    }
+
+    opms = {
+        "Adam" : top.Adam,
+        "AdaGrad" : top.Adagrad,
+        "SGD" : top.SGD
+    }
+
     def __init__( self , **kwargs ):
 
-        loss_type = kwargs.get( "loss_fn" , tnn.L1Loss )
-        self.loss_fn = loss_type()
+        self.loss_type = kwargs.get( "loss_type" , "MAE" )
+        loss_fun = mod_kern.losses.get( self.loss_type , tnn.L1Loss )
+        self.loss_fn = loss_fun()
 
         self.model = stellar_model().to( device )
-        self.starting_params = self.model.state_dict()
+        # self.starting_params = self.model.state_dict()
 
-        lr = kwargs.get( "lr" , 1e-4 )
-        opm_type = kwargs.get( "opm" , top.Adam )
-        self.opm = opm_type( self.model.parameters() , lr = lr )
+        self.lr = kwargs.get( "lr" , 1e-4 )
+
+        self.opm_type = kwargs.get( "opm" , "Adam" )
+        opm = mod_kern.opms.get( self.opm_type , top.Adam )
+        self.opm = opm( self.model.parameters() , lr = self.lr )
     
     def update( self , X , y ):
 
@@ -56,10 +72,17 @@ class mod_kern:
             X = X.to( device )
             y = y.to( device )
 
-            y_hat = self.model( X )
+            y_hat = self.model( X ).detach()
             loss = self.loss_fn( y_hat , y ).item()
 
         return loss
+
+    def load_from_file( self , path ):
+        
+        mod_state = tc.load( path )
+        self.model.load_state_dict( mod_state )
+        opm = mod_kern.opms.get( self.opm_type , top.Adam )
+        self.opm = opm( self.model.parameters() , lr = self.lr )
 
     def reset( self , **kwargs ):
 
@@ -76,8 +99,84 @@ class mod_kern:
 
 class train_app:
 
-    def __init__( self , **kwargs ):
+    @staticmethod
+    def load_hist( name ) -> pd.DataFrame:
+        
+        path = f"DATA/{name}/performance.csv"
+        df = pd.read_csv( path )
+        return df.set_index( "iter_num" )
+    
+    @staticmethod
+    def plot_hist( name , log = True ):
 
+        df : pd.DataFrame = train_app.load_hist( name )
+
+        plt.plot(
+            df.index,
+            df[ "ts_loss" ],
+            "--b",
+            label = "ts_loss" 
+        )
+
+        plt.plot(
+            df.index,
+            df[ "tr_loss" ],
+            "-k",
+            label = "tr_loss" 
+        )
+
+        plt.legend()
+        plt.title(
+            f"Evolution of {name}"
+        )
+        plt.xlabel( "iteration" )
+        plt.ylabel( "Error Value" )
+
+        if log:
+            plt.yscale( "log" )
+
+        plt.show()
+    
+    @staticmethod
+    def from_dict( app_d : Dict[ str , Any ] ):
+
+        name = app_d["name"]
+        app_d.pop( "name" )
+        t = train_app( name , **app_d )
+
+        t.iter = app_d["iter"]
+        t.min_loss = app_d[ "min_loss"]
+        t.i_min_loss = app_d[ "i_min_loss"]
+        
+        t.ck.base = app_d.get( "base_time" , 0 )
+        
+        pos_path = f"DATA/{t.name}/pos_model_params.pt"
+        t.pos_kernel.load_from_file( pos_path )
+
+        vel_path = f"DATA/{t.name}/vel_model_params.pt"
+        t.vel_kernel.load_from_file( vel_path )
+
+        return t
+
+    @staticmethod
+    def from_json( name ):
+
+        path = f"DATA/{name}/meta.json"
+        f = open( path , "rb" )
+        app_d = pck.load( f )
+        t = train_app.from_dict( app_d )
+        f.close()
+
+        return t
+        
+    def __init__( self , name : str , **kwargs ):
+
+        self.name : str = name
+        try:
+            os.mkdir( f"DATA/{self.name}" )
+        except FileExistsError:
+            pass
+        
         self._init_data( **kwargs )
 
         self._init_recorder( **kwargs )
@@ -95,8 +194,14 @@ class train_app:
 
         #-------------------------------------------------------------------
         # Defining the simulations
-        data_sets = kwargs.get( "data_sets" , list( range( 5*( 10**3 ) ) ) )
-        shuffle( data_sets )
+        data_sets = kwargs.get( "sets" , None )
+        if data_sets is None:
+            data_sets = list( range( 500 ) )
+        
+        if kwargs.get( "to_shuffle" , True ):
+            shuffle( data_sets )
+        
+        self.sets = data_sets
         n = int( .8*len( data_sets ) )
         
         #-------------------------------------------------------------------
@@ -108,6 +213,7 @@ class train_app:
             tr_batch_size,
             True
         ) )
+        self.tr_size = tr_batch_size
 
         #-------------------------------------------------------------------
         # Giving to testing
@@ -118,6 +224,7 @@ class train_app:
             ts_batch_size,
             True
         ) )
+        self.ts_size = ts_batch_size
 
     def _init_recorder( self , **kwargs ):
 
@@ -131,9 +238,9 @@ class train_app:
         # How much iterations between evaluations, evolution is printed
         # through a mobile mean of the costs
         self.record_interval = kwargs.get( "record_interval" , 1000 )
-        mov_avg = kwargs.get( "mov_avg" , 25 )
-        self.test_rec = mob_mean_gen( mov_avg )   # To smooth the training curve
-        self.train_rec = mob_mean_gen( mov_avg )  # idem
+        self.mov_avg = kwargs.get( "mov_avg" , 25 )
+        self.test_rec = mob_mean_gen( self.mov_avg )   # To smooth the training curve
+        self.train_rec = mob_mean_gen( self.mov_avg )  # idem
 
         #-------------------------------------------------------
         # where the evolution will be saved
@@ -142,23 +249,64 @@ class train_app:
 
     def _init_clock( self , **kwargs ):
 
-        max_time = kwargs.get( "max_time" , 12 )
-        time_type = kwargs.get( "time_type" , "hours" )
-        self.ck = clock( max_time , time_type )
+        self.max_time = kwargs.get( "max_time" , 12 )
+        self.time_type = kwargs.get( "time_type" , "hours" )
+        self.ck = clock( self.max_time , self.time_type )
 
-    def load_hist( self ):
+    def to_dict( self ) -> Dict:
         
-        path = "DATA/performance.csv"
-        df = pd.read_csv( path )
-        return df.set_index( "iter_num" )
+        return {
+            "name" : self.name,
+            "sets" : self.sets,
+            "tr_batch_size" : self.tr_size,
+            "ts_batch_size" : self.ts_size,
+            "to_save" : self.to_save,
+            "verbose" : self.verbose,
+            "record_interval" : self.record_interval,
+            "mov_avg" : self.mov_avg,
+            "buff_lim" : self.buff_lim,
+            "max_time" : self.max_time,
+            "time_type" : self.time_type,
+            "base_time" : self.ck.base,
+            "lr" : self.pos_kernel.lr,
+            "opm" : self.pos_kernel.opm_type,
+            "loss_type" : self.pos_kernel.loss_type,
+            "iter" : self.iter,
+            "min_loss" : self.min_loss,
+            "i_min_loss": self.i_min_loss,
+            "to_shuffle": False
+        }
 
+    def to_json( self ):
+
+        path = f"DATA/{self.name}/meta.json"
+        f = open( path , "wb")
+        d = self.to_dict()
+        pck.dump( d , f )
+        f.close()
+
+    def __str__( self ):
+
+        app_d = self.to_dict()
+        lst = []
+        for att , val in app_d.items():
+
+            if att == "sets":
+                att = "num_sets"
+                val = len( val )
+
+            lst.append(
+                f"{att} = {val}"
+            )
+        return "\n".join( lst )
+    
     def run( self ):
         
         @self.ck.tick()
         def update():
             self._update_net()
         
-        while True:
+        def iter_step():
 
             A = self.ck.is_done()
             B = self.iter%self.record_interval == 0
@@ -198,8 +346,16 @@ class train_app:
                 # Doing one iteration of the backprop algorithm
                 update()
                 self.iter += 1
-            else:
+
+        self.to_json()
+        while True:
+            try:
+                iter_step()
+                if self.ck.is_done():
+                    break
+            except:
                 break
+        self.to_json()
 
     def _print_rec( self , rec ):
 
@@ -245,7 +401,7 @@ class train_app:
             print()
             print( "saving buffer ....." , end = " ")
 
-        path = "DATA/performance.csv"
+        path = f"DATA/{self.name}/performance.csv"
         with open( path , "a" ) as f:
             if self.buff[0][0] == 0:
                 f.write(
@@ -311,17 +467,16 @@ class train_app:
             ( self.pos_kernel.model , "pos" ),
             ( self.vel_kernel.model , "vel" )
         ]
-        for model , name in tups:
-            param = [ x for x in model.parameters()]
+        for model , tp in tups:
+            param = model.state_dict()
             tc.save(
                 param,
-                f"DATA/{name}_model_params.pt"
+                f"DATA/{self.name}/{tp}_model_params.pt"
             )
 
         if self.verbose:
             print( "done!\n" )
 
-    # @CK.tick()
     def _update_net( self ):
 
         X , pos , vel = next( self.train_data )
@@ -332,15 +487,21 @@ if __name__ == "__main__":
 
     from time import sleep
 
-    t = train_app(
-        data_sets = list( range( 350 ) ),
-        tr_batch_size = 500,
-        ts_batch_size = 500,
-        lr = 1e-4,
-        record_interval = 25,
-        # max_time = 1,
-        # time_type = "hours",
-        buff_lim = 25
-    )
+    # t = train_app(
+    #     "A0",
+    #     sets = list( range( 400 ) ),
+    #     tr_batch_size = 200,
+    #     ts_batch_size = 200,
+    #     lr = .8*1e-4,
+    #     record_interval = 150,
+    #     max_time = 45,
+    #     mov_avg = 200,
+    #     time_type = "minutes",
+    #     buff_lim = 25,
+    #     loss_fn = "MSE"
+    # )
+    # print( t )
+    # print()
 
-    t.run()
+    # t.run()
+    # train_app.plot_hist( "A0" )

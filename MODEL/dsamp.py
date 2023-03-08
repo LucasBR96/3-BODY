@@ -7,7 +7,7 @@ from functools import lru_cache
 from random import shuffle , choice
 from typing import *
 
-lru_cache( 10**5 )
+@lru_cache( 10**5 )
 def get_tup( simu , index ):
 
     data = pd.read_csv(f"DATA/simu/simulacao_{simu}.csv")
@@ -96,8 +96,8 @@ class stellarDset( Dataset ):
 
 if __name__ == "__main__":
 
-    L = list( range( 5 ) )
-    D = DataLoader( stellarDset( L ), batch_size = 10 , shuffle = True )
+    L = list( range( 100 ) )
+    D = DataLoader( stellarDset( L ), batch_size = 100 , shuffle = True )
     X , pos , vel = next( iter( D ) )
 
     print( *X , sep = "\n" )

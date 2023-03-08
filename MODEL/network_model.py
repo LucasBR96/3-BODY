@@ -11,7 +11,7 @@ class perceptron( tnn.Module ):
 
         super().__init__()
         self.lin = tnn.Linear( in_size , out_size )
-        self.rel = tnn.ReLU( )
+        self.rel = tnn.Softplus( )
     
     def forward( self , X ):
 
