@@ -487,21 +487,21 @@ if __name__ == "__main__":
 
     from time import sleep
 
-    # t = train_app(
-    #     "A0",
-    #     sets = list( range( 400 ) ),
-    #     tr_batch_size = 200,
-    #     ts_batch_size = 200,
-    #     lr = .8*1e-4,
-    #     record_interval = 150,
-    #     max_time = 45,
-    #     mov_avg = 200,
-    #     time_type = "minutes",
-    #     buff_lim = 25,
-    #     loss_fn = "MSE"
-    # )
-    # print( t )
-    # print()
+    t = train_app(
+        "A1",
+        sets = list( range( 400 ) ),
+        tr_batch_size = 200,
+        ts_batch_size = 200,
+        lr = .8*1e-4,
+        record_interval = 150,
+        max_time = 45,
+        mov_avg = 200,
+        time_type = "minutes",
+        buff_lim = 25,
+        loss_fn = "MSE"
+    )
+    print( t )
+    print()
 
-    # t.run()
-    # train_app.plot_hist( "A0" )
+    t.run()
+    train_app.plot_hist( "A1" )

@@ -18,11 +18,11 @@ import numpy as np
 
 if __name__ == "__main__":
 
-    h_step = .5*1e-3
-    total_time = 120.
+    h_step = 5*1e-4
 
-    for i in range( 400 , 410 ):
+    for i in range( 0 , 500 ):
         
+        total_time = 120*( 1 + np.random.rand( ) )
         Sm = sm.simmu(
             h_step = h_step,
             run_time = total_time
